@@ -17,5 +17,5 @@ bound = true
 
 [[acceptance]]
 text = "Given a new contributor, When they open the repository, Then CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms and a pull request template are present and describe this project"
-bound = false
+bound = true
 +++
