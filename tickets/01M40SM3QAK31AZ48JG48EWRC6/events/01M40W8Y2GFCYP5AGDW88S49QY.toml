@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:36:55Z"
+digest = "ef39f50f6b79d44d2ed3cfaf211dc9c68f033e9a877de8a392f0e041983690a8"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+────────────
+ Nextest run ID 5e6cd3fa-7093-4e87-acc1-d6bbdd6bbda5 with nextest profile: default
+    Starting 4 tests across 5 binaries (78 tests skipped)
+        PASS [   0.006s] (1/4) clocx live::tests::reads_are_not_changes
+        PASS [   0.011s] (2/4) clocx live::tests::filter_keeps_sources_and_refs_and_drops_ignored_and_objects
+        PASS [   0.021s] (3/4) clocx live::tests::worker_collapses_a_backlog_and_persists_on_exit
+        PASS [   4.250s] (4/4) clocx::live live_view_refreshes_on_edits_and_commits_and_quits_on_q
+────────────
+     Summary [   4.251s] 4 tests run: 4 passed, 78 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/live_view_refreshes_on_edits_and_commits_and_quits_on_q|filter_keeps_sources_and_refs|reads_are_not_changes|worker_collapses_a_backlog/)"
+size = 726
+status = "measured"
+tests = ["live::tests::reads_are_not_changes", "live::tests::filter_keeps_sources_and_refs_and_drops_ignored_and_objects", "live::tests::worker_collapses_a_backlog_and_persists_on_exit", "live_view_refreshes_on_edits_and_commits_and_quits_on_q"]
+at = "2026-10-03T12:36:55Z"
+actor = "lognd"
+rev = 1

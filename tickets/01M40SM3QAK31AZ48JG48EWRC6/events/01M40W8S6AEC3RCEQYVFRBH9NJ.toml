@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:36:50Z"
+digest = "841f47f56c3cf0c49feb493e84501dfedafe5b82c547d8209b9c403a54cb1d63"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+────────────
+ Nextest run ID b90a8137-ed4b-4990-8130-950c81176663 with nextest profile: default
+    Starting 6 tests across 5 binaries (76 tests skipped)
+        PASS [   0.013s] (1/6) clocx live::tests::keys_map_to_actions
+        PASS [   0.013s] (2/6) clocx tests::live_conflicts_with_json
+        PASS [   0.013s] (3/6) clocx render::live::tests::before_the_first_report_it_says_computing
+        PASS [   0.015s] (4/6) clocx::cli live_without_a_terminal_says_so
+        PASS [   0.058s] (5/6) clocx render::live::tests::dashboard_shows_every_panel
+        PASS [   3.958s] (6/6) clocx::live live_view_refreshes_on_edits_and_commits_and_quits_on_q
+────────────
+     Summary [   3.959s] 6 tests run: 6 passed, 76 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/dashboard_shows_every_panel|before_the_first_report|keys_map_to_actions|live_view_refreshes_on_edits_and_commits_and_quits_on_q|live_without_a_terminal_says_so|live_conflicts_with_json/)"
+size = 845
+status = "measured"
+tests = ["live_without_a_terminal_says_so", "live::tests::keys_map_to_actions", "tests::live_conflicts_with_json", "render::live::tests::before_the_first_report_it_says_computing", "render::live::tests::dashboard_shows_every_panel", "live_view_refreshes_on_edits_and_commits_and_quits_on_q"]
+at = "2026-10-03T12:36:50Z"
+actor = "lognd"
+rev = 1
