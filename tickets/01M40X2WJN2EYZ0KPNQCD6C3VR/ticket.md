@@ -2,13 +2,13 @@
 id = "01M40X2WJN2EYZ0KPNQCD6C3VR"
 title = "Count tracked dotfiles and Python docstrings like cloc"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:51:05Z"
-updated = "2026-10-03T12:51:05Z"
+updated = "2026-10-03T12:51:16Z"
 scope = ["crates/clocx/**", "docs/**", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
