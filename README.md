@@ -40,7 +40,7 @@ cargo install --path crates/clocx
 
 ```bash
 clocx              # report on the current directory and exit
-clocx ~/src/acme   # report on another directory
+clocx path/to/repo # report on another directory
 clocx --live       # full-screen dashboard; q quits
 clocx --json       # the same report as one JSON document
 ```
