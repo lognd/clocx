@@ -2,7 +2,8 @@
 id = "01M411DA13HQ7BGWX2JXW8GMB7"
 title = "Linux release binaries need glibc 2.39"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
