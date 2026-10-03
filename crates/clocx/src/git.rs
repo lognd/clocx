@@ -129,7 +129,6 @@ pub fn line_churn(old: &[u8], new: &[u8]) -> Option<(u64, u64)> {
 pub mod testrepo {
     use std::fs;
     use std::path::{Path, PathBuf};
-    // frob:accept PROC001 because="test fixtures drive the git CLI to build histories with fixed dates; PROC001 targets frob's own crates"
     use std::process::Command;
 
     use super::Repo;

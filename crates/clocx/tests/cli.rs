@@ -1,6 +1,5 @@
 //! End-to-end tests of the clocx binary: exit codes and plain output into a pipe.
 
-// frob:accept PROC001 because="integration tests must spawn the built binary; PROC001 targets frob's own crates"
 use std::process::Command;
 
 /// Runs clocx with a throwaway cache dir so tests never touch the user's cache.

@@ -7,7 +7,6 @@
 
 use std::io::Write;
 use std::path::Path;
-// frob:accept PROC001 because="the live view test must spawn the built binary under a pseudo-terminal; PROC001 targets frob's own crates"
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::{Duration, Instant};

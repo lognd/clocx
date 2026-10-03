@@ -17,7 +17,6 @@ pub mod render;
 pub mod totals;
 pub mod worktrees;
 
-// frob:accept PROC001 because="ExitCode is the exit status of main, not a spawn; PROC001 targets frob's own crates"
 use std::process::ExitCode;
 
 use clap::Parser;
