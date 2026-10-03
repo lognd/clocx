@@ -1,0 +1,15 @@
+kind = "create"
+title = "Totals by language and directory with change since last run"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M40SKJNHMPP34A591K4MKVXS"
+persona = "repository owner"
+capability = "see code, comment and blank lines per language and per top-level directory"
+outcome_text = "I know where code is and how much changed since I last looked"
+scope = ["crates/clocx/**", "docs/**", "Cargo.lock"]
+acceptance = ["Given a directory tree, When clocx runs, Then it reports files, code, comment and blank lines per language and per directory at the configured depth", "Given a previous run, When clocx runs again after edits, Then each row shows the code-line change since that run", "Given unchanged files, When clocx refreshes, Then their counts come from the content-hash cache instead of being recounted"]
+at = "2026-10-03T11:50:35Z"
+actor = "lognd"
+rev = 1
