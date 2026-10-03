@@ -8,7 +8,7 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T12:19:51Z"
+updated = "2026-10-03T12:19:52Z"
 persona = "repository owner"
 capability = "see lines added and removed and files touched over the last hour, day, 7 and 30 days by directory"
 outcome_text = "I see where work is happening right now"
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given commits touching several directories, When clocx runs, Then activity is broken down per directory at the configured depth"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given activity in a window, When clocx renders, Then a trend sparkline of bucketed changes is shown"
