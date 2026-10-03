@@ -2,7 +2,8 @@
 id = "01M40YS7JK42X1Q5E75V9PSN9E"
 title = "CI matrix and tagged releases to GitHub and crates.io"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
