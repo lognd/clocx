@@ -184,3 +184,43 @@ fn outside_git_activity_is_unavailable_not_an_error() {
         );
     }
 }
+
+// frob:tests crates/clocx/src/worktrees.rs::collect kind=integration
+#[test]
+fn worktrees_show_uncommitted_work_and_progress() {
+    let tree = tempfile::tempdir().unwrap();
+    let root = tree.path().join("repo");
+    std::fs::create_dir(&root).unwrap();
+    git(&root, &["init", "-q", "-b", "main"]);
+    std::fs::write(root.join("a.rs"), "fn a() {}\n").unwrap();
+    git(&root, &["add", "-A"]);
+    git(&root, &["commit", "-q", "-m", "first"]);
+    let agent = tree.path().join("agent");
+    git(
+        &root,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            "-b",
+            "work",
+            agent.to_str().unwrap(),
+        ],
+    );
+    std::fs::write(agent.join("b.rs"), "fn b() {}\nfn c() {}\n").unwrap();
+    git(&agent, &["add", "-A"]);
+    git(&agent, &["commit", "-q", "-m", "b"]);
+    std::fs::write(agent.join("a.rs"), "fn a() {}\nfn d() {}\n").unwrap();
+
+    let out = clocx(&[root.to_str().unwrap()]);
+    assert!(out.status.success());
+    let text = String::from_utf8(out.stdout).unwrap();
+    let (_, wt) = text.split_once("Worktrees\n").expect("worktrees table");
+    assert!(wt.lines().next().unwrap().contains("vs main"), "{wt}");
+    let row = line(wt, "  agent");
+    assert!(
+        row.contains("work") && row.contains("+1") && row.contains("+3"),
+        "{row:?}"
+    );
+    assert!(line(wt, "* repo").contains("main"), "{wt}");
+}

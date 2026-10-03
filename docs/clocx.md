@@ -10,12 +10,13 @@ clocx reaches parity for what the owner uses.
 ## Usage
 
     clocx [PATH] [--depth N] [--rows N] [--color auto|always|never]
-          [--cache-dir DIR] [--no-cache] [--json] [-v...]
+          [--base BRANCH] [--cache-dir DIR] [--no-cache] [--json] [-v...]
 
 | Flag | Meaning |
 | --- | --- |
 | `PATH` | Directory to report on; default the current directory. |
 | `-d, --depth N` | Directory depth used to group totals and activity; default 1 (top-level directories). |
+| `--base BRANCH` | Base branch worktrees are compared with; a branch name or any revision. Default `main`, else `master`. |
 | `--rows N` | Most rows per text table; the rest fold into one dimmed `N more` row. Rows whose code changed are always shown. Default 12; `0` shows all. |
 | `--cache-dir DIR` | Where the count cache and last-run snapshot live; default `<user cache dir>/clocx`. Also `CLOCX_CACHE_DIR`. |
 | `--no-cache` | Read and write no cache or snapshot; the change column is never shown. |
@@ -83,6 +84,31 @@ Each commit's per-file result is cached by commit id in `commits.json`
 repository, or when history cannot be read, the section says it is
 unavailable; that is not an error.
 
+## Worktrees
+
+The owner and coding agents work in many git worktrees at once; this
+table shows the work in each before it is merged. One row per worktree
+of the repository (the main checkout and every linked worktree, found
+from whichever worktree `PATH` is in), most recently active first. The
+worktree `PATH` is in is marked `*`.
+
+| Column | Meaning |
+| --- | --- |
+| Branch | The checked-out branch, `(detached <id>)`, or `(no commits)`. |
+| Uncommitted | Lines added and removed against the worktree's HEAD, staged or not. Untracked files that are not ignored count as added, so new files show before they are staged. |
+| Files | Files with uncommitted changes. |
+| Ahead | Commits on HEAD that the base branch does not have. |
+| vs BASE | Lines added and removed since the merge base with the base branch, committed or not: the whole of the branch's work so far. Work that landed on the base after the branch point does not count. |
+| Last activity | The newest of the HEAD commit time and the modification times of changed files. |
+
+Changed paths come from git status, so `.gitignore`, the index stat
+cache and line-ending conversion behave as in git. Line counts compare
+file contents with the blob in HEAD or the merge base, ignoring `\r\n`
+versus `\n`, so a `core.autocrlf` checkout does not look modified.
+Binary files count as files touched with no lines. A worktree that
+cannot be read (for example its directory was deleted) shows the reason
+in place of its branch; it does not fail the report.
+
 ## JSON
 
 `--json` writes the same report the tables are drawn from, pretty-printed,
@@ -101,6 +127,10 @@ followed by a newline. It is never colored, whatever `--color` says.
   `trend`, oldest bucket first), `directories` (each `name`, `windows`
   as churn in the same order, `trend` over 7 days), `branches` and
   `last_commit_at`.
+- `worktrees`: unavailable, or `{"status": "ok", "base": ..., "worktrees":
+  [...]}` with each worktree's `name`, `path`, `current`, `branch`,
+  `head`, `uncommitted` (churn, `commits` 0), `ahead`, `vs_base` (churn,
+  `commits` = ahead), `last_activity` and `problem`.
 - Values that are unknown are `null`, never absent: `code_delta` and
   `baseline_at` without a previous run.
 
@@ -136,6 +166,7 @@ followed by a newline. It is never colored, whatever `--color` says.
 | `crates/clocx/src/cache.rs` | Count cache, commit cache and last-run snapshot on disk. |
 | `crates/clocx/src/git.rs` | Open the repository of a root; git error type. |
 | `crates/clocx/src/activity.rs` | Walk recent history and bucket line churn. |
+| `crates/clocx/src/worktrees.rs` | Status of every worktree against HEAD and the base. |
 | `crates/clocx/src/render/` | All output: tables, styles, formatting. |
 | `crates/clocx/src/logging.rs` | `tracing` subscriber setup. |
 | `crates/clocx/src/error.rs` | The run's error type. |

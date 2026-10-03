@@ -436,7 +436,7 @@ mod tests {
 
     #[test]
     fn report_from_a_linked_worktree_marks_it_current() {
-        let (t, wts) = setup();
+        let (_t, wts) = setup();
         let feat = wts.path().join("feat").canonicalize().unwrap();
         let repo = Repo::discover(&feat).unwrap();
         let w = collect(&repo, &feat, None).unwrap();
