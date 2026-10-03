@@ -2,7 +2,8 @@
 id = "01M40WNC6J55Z9D0EFTNPA6CW6"
 title = "Remove frob:accept PROC001 workarounds now that frob scopes the rule"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M40SKJNHMPP34A591K4MKVXS"
