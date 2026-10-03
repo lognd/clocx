@@ -20,11 +20,11 @@ bound = true
 
 [[acceptance]]
 text = "Given a tag vX.Y.Z matching the crate version on a commit with green CI, When the release workflow runs, Then archives with checksums for five targets are attached to a GitHub release"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same tag, When the release workflow runs, Then the crate is published to crates.io after the GitHub release"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the crate package, When cargo package runs, Then it builds with complete crates.io metadata and the README"
