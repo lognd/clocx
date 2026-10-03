@@ -8,7 +8,7 @@ points = 3
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T13:20:46Z"
-updated = "2026-10-03T13:37:19Z"
+updated = "2026-10-03T13:37:48Z"
 scope = ["README.md", "docs/**", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md", ".github/ISSUE_TEMPLATE/**", ".github/PULL_REQUEST_TEMPLATE.md", "changelog.d/**"]
 
 [[acceptance]]
