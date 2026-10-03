@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new section, flag or improvement for clocx
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For anything beyond a small, obviously scoped change, please open
+        this issue before sending a pull request; see CONTRIBUTING.md.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What do you want to see or do that clocx does not support today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What clocx should show or accept. A sketch of the output or flag is welcome.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you considered and why you did not prefer them.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: willing
+    attributes:
+      label: Willingness to implement
+      options:
+        - "Yes, I would like to implement this myself"
+        - "I could help but would need guidance"
+        - "No, I am proposing this for someone else to build"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: ai-disclosure
+    attributes:
+      label: AI assistance
+      options:
+        - label: This proposal was drafted with AI assistance (see CONTRIBUTING.md's AI-assisted contributions policy)
+          required: false

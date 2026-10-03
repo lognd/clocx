@@ -1,0 +1,64 @@
+name: Bug report
+description: Report unexpected or incorrect behaviour in clocx
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. The more precise the
+        reproduction, the faster this can be fixed.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear description of the incorrect or unexpected behaviour.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: >
+        The command you ran and the smallest repository or file layout that
+        shows the problem. For a counting difference, include the file (or a
+        minimal one) and both numbers.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The relevant part of the report, or `clocx -vv ...` diagnostics.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: clocx version and install method
+      description: "Run: clocx --version"
+      placeholder: "clocx 0.1.0, cargo install"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system, terminal and git version
+      placeholder: "Ubuntu 24.04, kitty, git 2.47"
+    validations:
+      required: true
