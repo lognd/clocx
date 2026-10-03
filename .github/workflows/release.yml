@@ -1,0 +1,246 @@
+name: Release
+
+# Pushing a tag vX.Y.Z releases clocx X.Y.Z:
+#   1. plan: the tag matches the crate version, and CI passed on the tagged
+#      commit (waits for a running CI, refuses a red or missing one);
+#   2. build: archives and SHA-256 checksums for five targets;
+#   3. github-release: a GitHub release with the archives, notes taken from
+#      the CHANGELOG.md section of the version;
+#   4. crates-io: `cargo publish`, after the GitHub release exists.
+# See docs/releasing.md for the steps and the one-time crates.io setup.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+# One release at a time, queued rather than cancelled: a half-finished
+# release must complete.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  plan:
+    name: plan (tag, version and CI agree)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Tag matches the crate version
+        id: version
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag $TAG is not vMAJOR.MINOR.PATCH"; exit 1
+          fi
+          crate=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "clocx") | .version')
+          if [ "$crate" != "$version" ]; then
+            echo "::error::tag version $version differs from the clocx crate version $crate"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: CI passed on ${{ github.sha }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Wait up to 40 minutes for a CI run of this exact commit to finish.
+          for _ in $(seq 1 80); do
+            runs=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=20" --jq '.workflow_runs')
+            if [ "$(echo "$runs" | jq 'length')" = "0" ]; then
+              echo "::error::no CI run exists for $SHA; push the commit to master and let CI finish first"; exit 1
+            fi
+            pending=$(echo "$runs" | jq '[.[] | select(.status != "completed")] | length')
+            if [ "$pending" = "0" ]; then
+              conclusion=$(echo "$runs" | jq -r 'sort_by(.run_number) | last | .conclusion')
+              echo "CI conclusion for $SHA: $conclusion"
+              if [ "$conclusion" = "success" ]; then exit 0; fi
+              echo "::error::CI is not green for $SHA ($conclusion); refusing to release"; exit 1
+            fi
+            echo "CI still running for $SHA; waiting"
+            sleep 30
+          done
+          echo "::error::CI did not finish for $SHA within 40 minutes"; exit 1
+
+  build:
+    name: build (${{ matrix.target }})
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            smoke: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            smoke: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            smoke: true
+          # Cross-built on the arm64 macOS runner, which cannot run it.
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            smoke: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            smoke: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain and target
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --target "$TARGET"
+          rustup default "$channel"
+      - name: Build
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: cargo build --release --locked -p clocx --target "$TARGET"
+      - name: Smoke (the binary runs and reports the tagged version)
+        if: matrix.smoke
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          out=$("target/$TARGET/release/clocx" --version)
+          echo "$out"
+          [ "$out" = "clocx $VERSION" ]
+          "target/$TARGET/release/clocx" --no-cache --color never . > /dev/null
+      - name: Package the archive and its checksum
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          name="clocx-$VERSION-$TARGET"
+          mkdir -p "dist/$name"
+          exe=clocx
+          case "$TARGET" in *windows*) exe=clocx.exe ;; esac
+          cp "target/$TARGET/release/$exe" README.md LICENSE CHANGELOG.md "dist/$name/"
+          cp docs/clocx.md "dist/$name/clocx.md"
+          cd dist
+          case "$TARGET" in
+            *windows*) archive="$name.zip"; 7z a -tzip "$archive" "$name" > /dev/null ;;
+            *) archive="$name.tar.gz"; tar -czf "$archive" "$name" ;;
+          esac
+          if command -v sha256sum > /dev/null; then sha256sum "$archive" > "$archive.sha256"; else shasum -a 256 "$archive" > "$archive.sha256"; fi
+          cat "$archive.sha256"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: archive-${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+
+  github-release:
+    name: GitHub release
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: archive-*
+          path: dist
+          merge-multiple: true
+      - name: Release notes from CHANGELOG.md
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          # The section from "## [VERSION]" up to the next "## [" heading.
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $VERSION; add one before tagging"; exit 1
+          fi
+      - name: Create the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          flags=()
+          case "$VERSION" in *-*) flags+=(--prerelease) ;; esac
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            echo "release $TAG exists; uploading any missing assets"
+            gh release upload "$TAG" --repo "$REPO" dist/* --clobber
+          else
+            gh release create "$TAG" --repo "$REPO" --verify-tag --title "clocx $VERSION" \
+              --notes-file notes.md "${flags[@]}" dist/*
+          fi
+
+  crates-io:
+    name: crates.io
+    needs: [plan, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The `crates-io` environment holds the CARGO_REGISTRY_TOKEN secret and
+    # can require a reviewer before publishing (docs/releasing.md).
+    environment: crates-io
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Publish (skipped when this version is already on crates.io)
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A "clocx-release (https://github.com/lognd/clocx)" \
+            "https://crates.io/api/v1/crates/clocx/$VERSION")
+          if [ "$status" = "200" ]; then
+            echo "clocx $VERSION is already on crates.io; nothing to do"; exit 0
+          fi
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN is not set in the crates-io environment (docs/releasing.md)"; exit 1
+          fi
+          cargo publish --locked -p clocx

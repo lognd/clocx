@@ -1,0 +1,20 @@
+# Weekly update pull requests. GitHub Actions are pinned to commit SHAs in
+# .github/workflows/*.yml; dependabot resolves the version comment next to
+# each pin and bumps both. Cargo updates are grouped so one PR carries them.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"
+    groups:
+      cargo:
+        patterns: ["*"]

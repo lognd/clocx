@@ -5,7 +5,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+authors.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://github.com/lognd/clocx/blob/master/docs/clocx.md"
+readme = "../../README.md"
+keywords = ["cloc", "loc", "git", "worktree", "statistics"]
+categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
 name = "clocx"
