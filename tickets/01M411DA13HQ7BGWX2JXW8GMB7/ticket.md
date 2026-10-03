@@ -8,7 +8,7 @@ points = 2
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T14:06:41Z"
-updated = "2026-10-03T14:14:30Z"
+updated = "2026-10-03T14:14:35Z"
 scope = [".github/workflows/release.yml", "README.md", "docs/**"]
 
 [[acceptance]]
