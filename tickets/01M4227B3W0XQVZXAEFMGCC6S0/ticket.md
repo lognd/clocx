@@ -8,7 +8,7 @@ points = 3
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-03T23:40:09Z"
-updated = "2026-10-03T23:40:11Z"
+updated = "2026-10-03T23:52:14Z"
 persona = "clocx owner"
 capability = "a progress line that overwrites itself while files are counted, with an ETA"
 outcome_text = "I am not staring at a blank screen on a large tree"
@@ -16,7 +16,7 @@ scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**", "README.md"]
 
 [[acceptance]]
 text = "Given stderr is a terminal and the run takes longer than a short delay, When clocx computes a one-shot report, Then a progress line showing the phase, files counted out of the total, rate and ETA overwrites itself in place and is erased before the report is written"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given stderr is not a terminal, or --no-progress, or --live, When clocx runs, Then no progress output is written"
