@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:25:50Z"
+digest = "315fc3c3f12d06ddb5d261355bb761912dab188cb90536a5f8779f8ce4eba6c7"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+────────────
+ Nextest run ID 58e942f0-74fa-416a-bfc7-b481cc87749b with nextest profile: default
+    Starting 5 tests across 4 binaries (63 tests skipped)
+        PASS [   0.007s] (1/5) clocx render::text::tests::worktrees_show_branch_work_and_progress
+        PASS [   0.049s] (2/5) clocx worktrees::tests::a_removed_worktree_directory_is_a_problem_not_an_error
+        PASS [   0.051s] (3/5) clocx worktrees::tests::report_from_a_linked_worktree_marks_it_current
+        PASS [   0.055s] (4/5) clocx worktrees::tests::every_worktree_is_listed_with_its_branch
+        PASS [   0.068s] (5/5) clocx::cli worktrees_show_uncommitted_work_and_progress
+────────────
+     Summary [   0.069s] 5 tests run: 5 passed, 63 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/every_worktree_is_listed_with_its_branch|report_from_a_linked_worktree_marks_it_current|a_removed_worktree_directory_is_a_problem|worktrees_show_branch_work_and_progress|worktrees_show_uncommitted_work_and_progress/)"
+size = 840
+status = "measured"
+tests = ["render::text::tests::worktrees_show_branch_work_and_progress", "worktrees::tests::a_removed_worktree_directory_is_a_problem_not_an_error", "worktrees::tests::report_from_a_linked_worktree_marks_it_current", "worktrees::tests::every_worktree_is_listed_with_its_branch", "worktrees_show_uncommitted_work_and_progress"]
+at = "2026-10-03T12:25:50Z"
+actor = "lognd"
+rev = 1
