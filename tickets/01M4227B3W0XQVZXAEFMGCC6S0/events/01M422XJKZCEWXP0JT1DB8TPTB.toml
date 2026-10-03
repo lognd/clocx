@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T23:52:17Z"
+digest = "e52da11d3df386f598c602c183bc5796d3af39cd74823ac4765a7c7f22d7c6e7"
+exit_code = 0
+inline = """
+
+running 1 test
+test no_progress_line_when_stderr_is_not_a_terminal ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 3.47s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running tests/cli.rs (target/debug/deps/cli-72afdf5facc6aaa3)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p clocx --test cli no_progress_line_when_stderr_is_not_a_terminal"
+size = 312
+status = "measured"
+at = "2026-10-03T23:52:17Z"
+actor = "lognd"
+rev = 1
