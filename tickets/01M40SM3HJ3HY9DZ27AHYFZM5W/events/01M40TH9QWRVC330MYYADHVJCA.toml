@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:06:32Z"
+digest = "4dd2b312fc07c0cecf0a4ff781d6a14d4f1ee436003cbecc6a79d47f7dadaed5"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+────────────
+ Nextest run ID 9db9f095-ccca-4f2d-ad3d-b970421f2109 with nextest profile: default
+    Starting 4 tests across 4 binaries (31 tests skipped)
+        PASS [   0.017s] (1/4) clocx totals::tests::dir_keys_group_by_depth
+        PASS [   0.017s] (2/4) clocx render::text::tests::totals_tables_show_counts_and_change
+        PASS [   0.017s] (3/4) clocx render::text::tests::long_tables_fold_but_keep_changed_rows
+        PASS [   0.031s] (4/4) clocx totals::tests::counts_by_language_and_directory
+────────────
+     Summary [   0.032s] 4 tests run: 4 passed, 31 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/counts_by_language_and_directory|dir_keys_group_by_depth|totals_tables_show_counts|long_tables_fold/)"
+size = 700
+status = "measured"
+tests = ["totals::tests::dir_keys_group_by_depth", "render::text::tests::totals_tables_show_counts_and_change", "render::text::tests::long_tables_fold_but_keep_changed_rows", "totals::tests::counts_by_language_and_directory"]
+at = "2026-10-03T12:06:32Z"
+actor = "lognd"
+rev = 1

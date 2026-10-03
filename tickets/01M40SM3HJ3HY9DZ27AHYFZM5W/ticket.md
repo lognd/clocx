@@ -8,7 +8,7 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T12:00:40Z"
+updated = "2026-10-03T12:06:32Z"
 persona = "repository owner"
 capability = "see code, comment and blank lines per language and per top-level directory"
 outcome_text = "I know where code is and how much changed since I last looked"
@@ -16,7 +16,7 @@ scope = ["crates/clocx/**", "docs/**", "Cargo.lock", "frob.lock", "tests/inputs/
 
 [[acceptance]]
 text = "Given a directory tree, When clocx runs, Then it reports files, code, comment and blank lines per language and per directory at the configured depth"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a previous run, When clocx runs again after edits, Then each row shows the code-line change since that run"
