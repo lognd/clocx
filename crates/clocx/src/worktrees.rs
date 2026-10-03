@@ -34,12 +34,17 @@ fn resolve_base(repo: &gix::Repository, wanted: Option<&str>) -> Option<(String,
         Some(name) => {
             let found = lookup(name).map(|id| (name.to_owned(), id));
             if found.is_none() {
-                warn!(base = name, "base branch not found; ahead and vs-base are left out");
+                warn!(
+                    base = name,
+                    "base branch not found; ahead and vs-base are left out"
+                );
             }
             found
         }
         None => DEFAULT_BASES.iter().find_map(|n| {
-            let r = repo.find_reference(format!("refs/heads/{n}").as_str()).ok()?;
+            let r = repo
+                .find_reference(format!("refs/heads/{n}").as_str())
+                .ok()?;
             let mut r = r;
             Some(((*n).to_owned(), r.peel_to_id().ok()?.detach()))
         }),
@@ -63,8 +68,13 @@ fn worktree_paths(main: &gix::Repository) -> Result<Vec<PathBuf>, GitError> {
 
 /// The bytes of the blob at `path` in `tree`, or empty when absent or not a file.
 fn blob_at(tree: Option<&gix::Tree<'_>>, path: &str) -> Result<Vec<u8>, GitError> {
-    let Some(tree) = tree else { return Ok(Vec::new()) };
-    let Some(entry) = tree.lookup_entry_by_path(path).map_err(read_err("looking up a path in a tree"))? else {
+    let Some(tree) = tree else {
+        return Ok(Vec::new());
+    };
+    let Some(entry) = tree
+        .lookup_entry_by_path(path)
+        .map_err(read_err("looking up a path in a tree"))?
+    else {
         return Ok(Vec::new());
     };
     if !entry.mode().is_blob() {
@@ -123,7 +133,10 @@ fn mtime(path: &Path) -> Option<Timestamp> {
 
 /// Computes one worktree's status; any git failure becomes the worktree's `problem`.
 fn status_of(path: &Path, base: Option<gix::ObjectId>) -> WorktreeStatus {
-    let name = path.file_name().map_or_else(|| path.display().to_string(), |n| n.to_string_lossy().into_owned());
+    let name = path.file_name().map_or_else(
+        || path.display().to_string(),
+        |n| n.to_string_lossy().into_owned(),
+    );
     let mut status = WorktreeStatus {
         name,
         path: path.display().to_string(),
@@ -148,17 +161,29 @@ fn status_of(path: &Path, base: Option<gix::ObjectId>) -> WorktreeStatus {
 }
 
 /// Fills `status` for the worktree at `path`.
-fn fill(path: &Path, base: Option<gix::ObjectId>, status: &mut WorktreeStatus) -> Result<(), GitError> {
+fn fill(
+    path: &Path,
+    base: Option<gix::ObjectId>,
+    status: &mut WorktreeStatus,
+) -> Result<(), GitError> {
     let repo = gix::open(path).map_err(read_err("opening worktree"))?;
     let head = repo.head().map_err(read_err("reading HEAD"))?;
-    status.branch = head.referent_name().filter(|_| !head.is_detached()).map(|n| n.shorten().to_string());
+    status.branch = head
+        .referent_name()
+        .filter(|_| !head.is_detached())
+        .map(|n| n.shorten().to_string());
     let head_id = repo.head_id().ok().map(|id| id.detach());
     status.head = head_id.map(|id| id.to_hex_with_len(7).to_string());
     let head_tree = head_id.map(|id| tree_of(&repo, id)).transpose()?;
     let head_time = match head_id {
         Some(id) => {
-            let commit = repo.find_commit(id).map_err(read_err("reading HEAD commit"))?;
-            let seconds = commit.time().map_err(read_err("reading commit time"))?.seconds;
+            let commit = repo
+                .find_commit(id)
+                .map_err(read_err("reading HEAD commit"))?;
+            let seconds = commit
+                .time()
+                .map_err(read_err("reading commit time"))?
+                .seconds;
             Timestamp::from_second(seconds).ok()
         }
         None => None,
@@ -206,7 +231,10 @@ fn fill(path: &Path, base: Option<gix::ObjectId>, status: &mut WorktreeStatus) -
             if change.entry_mode().is_blob() {
                 paths.insert(change.location().to_string());
             }
-            if let gix::object::tree::diff::ChangeDetached::Rewrite { source_location, .. } = change {
+            if let gix::object::tree::diff::ChangeDetached::Rewrite {
+                source_location, ..
+            } = change
+            {
                 paths.insert(source_location.to_string());
             }
         }
@@ -234,14 +262,22 @@ fn fill(path: &Path, base: Option<gix::ObjectId>, status: &mut WorktreeStatus) -
 /// # Errors
 /// Returns [`GitError::Read`] when the worktree list cannot be read; a single unreadable worktree is reported in its row instead.
 pub fn collect(repo: &Repo, root: &Path, base: Option<&str>) -> Result<Worktrees, GitError> {
-    let main = repo.repo.main_repo().map_err(read_err("opening the main repository"))?;
+    let main = repo
+        .repo
+        .main_repo()
+        .map_err(read_err("opening the main repository"))?;
     let base = resolve_base(&main, base);
     let paths = worktree_paths(&main)?;
     let base_id = base.as_ref().map(|(_, id)| *id);
-    let mut worktrees: Vec<WorktreeStatus> = paths.par_iter().map(|p| status_of(p, base_id)).collect();
+    let mut worktrees: Vec<WorktreeStatus> =
+        paths.par_iter().map(|p| status_of(p, base_id)).collect();
 
     // The deepest worktree containing the root is the current one (worktrees can nest).
-    let canonical = |p: &str| PathBuf::from(p).canonicalize().unwrap_or_else(|_| PathBuf::from(p));
+    let canonical = |p: &str| {
+        PathBuf::from(p)
+            .canonicalize()
+            .unwrap_or_else(|_| PathBuf::from(p))
+    };
     if let Some(current) = worktrees
         .iter_mut()
         .filter(|w| root.starts_with(canonical(&w.path)))
@@ -257,7 +293,10 @@ pub fn collect(repo: &Repo, root: &Path, base: Option<&str>) -> Result<Worktrees
             .then_with(|| a.name.cmp(&b.name))
     });
     info!(count = worktrees.len(), base = ?base.as_ref().map(|b| &b.0), "worktrees read");
-    Ok(Worktrees { base: base.map(|(name, _)| name), worktrees })
+    Ok(Worktrees {
+        base: base.map(|(name, _)| name),
+        worktrees,
+    })
 }
 
 #[cfg(test)]
@@ -268,7 +307,10 @@ mod tests {
     const T0: i64 = 1_790_000_000;
 
     fn find<'a>(w: &'a Worktrees, name: &str) -> &'a WorktreeStatus {
-        w.worktrees.iter().find(|s| s.name == name).unwrap_or_else(|| panic!("no worktree {name}: {w:?}"))
+        w.worktrees
+            .iter()
+            .find(|s| s.name == name)
+            .unwrap_or_else(|| panic!("no worktree {name}: {w:?}"))
     }
 
     /// A repo on `main` with one commit, plus a linked worktree `feat` on branch `feature`.
@@ -278,7 +320,14 @@ mod tests {
         t.commit("base", T0);
         let wts = tempfile::tempdir().unwrap();
         let feat = wts.path().join("feat");
-        t.git(&["worktree", "add", "-q", "-b", "feature", feat.to_str().unwrap()]);
+        t.git(&[
+            "worktree",
+            "add",
+            "-q",
+            "-b",
+            "feature",
+            feat.to_str().unwrap(),
+        ]);
         (t, wts)
     }
 
@@ -310,8 +359,19 @@ mod tests {
         fs::write(feat.join("target/junk.rs"), "ignored\n").unwrap();
         let w = collect(&t.open(), &t.path(), None).unwrap();
         let s = find(&w, "feat");
-        assert_eq!(s.uncommitted, Churn { added: 5, removed: 1, files: 3, commits: 0 });
-        assert!(s.last_activity > Timestamp::from_second(T0).ok(), "edits move last activity");
+        assert_eq!(
+            s.uncommitted,
+            Churn {
+                added: 5,
+                removed: 1,
+                files: 3,
+                commits: 0
+            }
+        );
+        assert!(
+            s.last_activity > Timestamp::from_second(T0).ok(),
+            "edits move last activity"
+        );
     }
 
     #[test]
@@ -338,8 +398,24 @@ mod tests {
         let w = collect(&t.open(), &t.path(), None).unwrap();
         let s = find(&w, "feat");
         assert_eq!(s.ahead, Some(1));
-        assert_eq!(s.uncommitted, Churn { added: 1, removed: 0, files: 1, commits: 0 });
-        assert_eq!(s.vs_base, Some(Churn { added: 3, removed: 0, files: 2, commits: 1 }));
+        assert_eq!(
+            s.uncommitted,
+            Churn {
+                added: 1,
+                removed: 0,
+                files: 1,
+                commits: 0
+            }
+        );
+        assert_eq!(
+            s.vs_base,
+            Some(Churn {
+                added: 3,
+                removed: 0,
+                files: 2,
+                commits: 1
+            })
+        );
         let main = w.worktrees.iter().find(|x| x.current).unwrap();
         assert_eq!(main.ahead, Some(0));
     }
@@ -351,7 +427,11 @@ mod tests {
         assert_eq!(w.base.as_deref(), Some("feature"));
         let w = collect(&t.open(), &t.path(), Some("nope")).unwrap();
         assert_eq!(w.base, None);
-        assert!(w.worktrees.iter().all(|s| s.ahead.is_none() && s.vs_base.is_none()));
+        assert!(
+            w.worktrees
+                .iter()
+                .all(|s| s.ahead.is_none() && s.vs_base.is_none())
+        );
     }
 
     #[test]
@@ -372,6 +452,10 @@ mod tests {
         let w = collect(&t.open(), &t.path(), None).unwrap();
         let s = find(&w, "feat");
         assert_eq!(s.problem.as_deref(), Some("worktree directory is missing"));
-        assert_eq!(w.worktrees.last().unwrap().name, "feat", "problems sort last");
+        assert_eq!(
+            w.worktrees.last().unwrap().name,
+            "feat",
+            "problems sort last"
+        );
     }
 }

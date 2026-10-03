@@ -2,7 +2,7 @@
 
 use crate::model::{
     Activity, ActivityWindow, CacheUse, Churn, DirActivity, LineCounts, Report, Section, Totals,
-    TotalsRow,
+    TotalsRow, WorktreeStatus, Worktrees,
 };
 
 /// Builds one row.
@@ -46,6 +46,7 @@ pub fn report() -> Report {
             cache: CacheUse::default(),
         },
         activity: Section::Ok(activity()),
+        worktrees: Section::Ok(worktrees()),
     }
 }
 
@@ -101,5 +102,48 @@ fn activity() -> Activity {
         ],
         branches: 3,
         last_commit_at: Some("2026-10-03T11:55:00Z".parse().unwrap()),
+    }
+}
+
+/// A worktree row with defaults; tests override what they need.
+fn wt(name: &str) -> WorktreeStatus {
+    WorktreeStatus {
+        name: name.into(),
+        path: format!("/w/{name}"),
+        current: false,
+        branch: None,
+        head: Some("abc1234".into()),
+        uncommitted: Churn::default(),
+        ahead: Some(0),
+        vs_base: Some(Churn::default()),
+        last_activity: None,
+        problem: None,
+    }
+}
+
+/// The main checkout, an agent worktree with work in progress, a detached probe and a missing one.
+fn worktrees() -> Worktrees {
+    Worktrees {
+        base: Some("master".into()),
+        worktrees: vec![
+            WorktreeStatus {
+                current: true,
+                branch: Some("master".into()),
+                ..wt("cloc")
+            },
+            WorktreeStatus {
+                branch: Some("ticket/x".into()),
+                uncommitted: churn(12, 3, 2, 0),
+                ahead: Some(4),
+                vs_base: Some(churn(40, 3, 5, 4)),
+                last_activity: Some("2026-10-03T11:58:00Z".parse().unwrap()),
+                ..wt("agent-1")
+            },
+            wt("probe"),
+            WorktreeStatus {
+                problem: Some("worktree directory is missing".into()),
+                ..wt("gone")
+            },
+        ],
     }
 }

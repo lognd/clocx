@@ -118,7 +118,10 @@ pub fn line_churn(old: &[u8], new: &[u8]) -> Option<(u64, u64)> {
     }
     let input = InternedInput::new(&old[..], &new[..]);
     let diff = Diff::compute(Algorithm::Histogram, &input);
-    Some((u64::from(diff.count_additions()), u64::from(diff.count_removals())))
+    Some((
+        u64::from(diff.count_additions()),
+        u64::from(diff.count_removals()),
+    ))
 }
 
 /// Throwaway repositories with commits at chosen times, for tests.

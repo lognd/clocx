@@ -104,13 +104,19 @@ fn worktrees_section(
 ) -> Section<Worktrees> {
     let repo = match repo {
         Ok(r) => r,
-        Err(e) => return Section::Unavailable { reason: e.to_string() },
+        Err(e) => {
+            return Section::Unavailable {
+                reason: e.to_string(),
+            };
+        }
     };
     match worktrees::collect(repo, root, base) {
         Ok(w) => Section::Ok(w),
         Err(e) => {
             warn!(error = %e, "worktrees could not be read");
-            Section::Unavailable { reason: e.to_string() }
+            Section::Unavailable {
+                reason: e.to_string(),
+            }
         }
     }
 }

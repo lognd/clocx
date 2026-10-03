@@ -3,7 +3,9 @@
 use super::format;
 use super::style::{Theme, paint};
 use super::table::{Align, Cell, Table};
-use crate::model::{Activity, Churn, DirActivity, Report, Section, Totals, TotalsRow};
+use crate::model::{
+    Activity, Churn, DirActivity, Report, Section, Totals, TotalsRow, WorktreeStatus, Worktrees,
+};
 
 /// Builds the whole text report.
 pub fn report(report: &Report, theme: &Theme, rows: usize) -> String {
@@ -11,6 +13,7 @@ pub fn report(report: &Report, theme: &Theme, rows: usize) -> String {
     header(report, theme, &mut out);
     totals(&report.totals, report, theme, rows, &mut out);
     activity(&report.activity, report, theme, rows, &mut out);
+    worktrees(&report.worktrees, report, theme, &mut out);
     out
 }
 
@@ -284,6 +287,93 @@ fn activity(
     dirs.render(theme, out);
 }
 
+/// One worktree's row: name (current marked), branch, uncommitted, ahead, vs base, last activity.
+fn worktree_row(w: &WorktreeStatus, report: &Report, theme: &Theme) -> Vec<Cell> {
+    let name = if w.current {
+        format!("* {}", w.name)
+    } else {
+        format!("  {}", w.name)
+    };
+    let name_style = if w.current { theme.header } else { theme.name };
+    if let Some(problem) = &w.problem {
+        return vec![
+            Cell::styled(name, name_style),
+            Cell::styled(problem.clone(), theme.warn),
+            Cell::plain(""),
+            Cell::plain(""),
+            Cell::plain(""),
+            Cell::plain(""),
+            Cell::plain(""),
+        ];
+    }
+    let branch = match (&w.branch, &w.head) {
+        (Some(b), _) => Cell::styled(b.clone(), theme.name),
+        (None, Some(h)) => Cell::styled(format!("(detached {h})"), theme.dim),
+        (None, None) => Cell::styled("(no commits)", theme.dim),
+    };
+    let ahead = match w.ahead {
+        Some(0) | None => Cell::plain(""),
+        Some(n) => Cell::plain(format::count(n)),
+    };
+    vec![
+        Cell::styled(name, name_style),
+        branch,
+        churn_cell(&w.uncommitted, theme),
+        quiet_count(w.uncommitted.files),
+        ahead,
+        w.vs_base
+            .as_ref()
+            .map_or_else(|| Cell::plain(""), |c| churn_cell(c, theme)),
+        Cell::styled(
+            w.last_activity
+                .map_or_else(String::new, |t| format::age(t, report.generated_at)),
+            theme.dim,
+        ),
+    ]
+}
+
+/// The worktrees table: every worktree and its work in progress.
+fn worktrees(section: &Section<Worktrees>, report: &Report, theme: &Theme, out: &mut String) {
+    out.push('\n');
+    let w = match section {
+        Section::Ok(w) => w,
+        Section::Unavailable { reason } => {
+            out.push_str(&paint(
+                theme.dim,
+                &format!("Worktrees: unavailable ({reason}).\n"),
+            ));
+            return;
+        }
+    };
+    let vs = w
+        .base
+        .as_ref()
+        .map_or_else(|| "vs base".to_owned(), |b| format!("vs {b}"));
+    let mut table = Table::new(
+        "Worktrees",
+        &[
+            ("Worktree", Align::Left),
+            ("Branch", Align::Left),
+            ("Uncommitted", Align::Right),
+            ("Files", Align::Right),
+            ("Ahead", Align::Right),
+            (vs.as_str(), Align::Right),
+            ("Last activity", Align::Left),
+        ],
+    );
+    for wt in &w.worktrees {
+        table.row(worktree_row(wt, report, theme));
+    }
+    table.render(theme, out);
+    let note = match &w.base {
+        Some(b) => format!(
+            "Uncommitted: against HEAD. Ahead and vs {b}: since the merge base with {b}, committed or not.\n"
+        ),
+        None => "No base branch found (main or master; set one with --base).\n".to_owned(),
+    };
+    out.push_str(&paint(theme.dim, &note));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -355,6 +445,35 @@ mod tests {
         let out = plain(&r);
         assert!(out.contains("Activity: unavailable (not a git repository)."));
         assert!(!out.contains("Where work is happening"));
+    }
+
+    #[test]
+    fn worktrees_show_branch_work_and_progress() {
+        let out = plain(&sample::report());
+        let (_, wt) = out.split_once("Worktrees\n").unwrap();
+        let header = wt.lines().next().unwrap();
+        assert!(header.contains("vs master"), "{header:?}");
+        let cur = wt.lines().find(|l| l.starts_with("* cloc")).unwrap();
+        assert!(cur.contains("master"), "{cur:?}");
+        let agent = wt.lines().find(|l| l.starts_with("  agent-1")).unwrap();
+        assert!(
+            agent.contains("ticket/x") && agent.contains("+12 -3") && agent.contains("+40 -3"),
+            "{agent:?}"
+        );
+        assert!(agent.contains("2m ago"), "{agent:?}");
+        let gone = wt.lines().find(|l| l.starts_with("  gone")).unwrap();
+        assert!(gone.contains("worktree directory is missing"));
+        let detached = wt.lines().find(|l| l.starts_with("  probe")).unwrap();
+        assert!(detached.contains("(detached abc1234)"));
+    }
+
+    #[test]
+    fn unavailable_worktrees_say_why() {
+        let mut r = sample::report();
+        r.worktrees = Section::Unavailable {
+            reason: "not a git repository".into(),
+        };
+        assert!(plain(&r).contains("Worktrees: unavailable (not a git repository)."));
     }
 
     #[test]
