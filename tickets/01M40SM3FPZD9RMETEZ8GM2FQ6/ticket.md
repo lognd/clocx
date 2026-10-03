@@ -8,11 +8,11 @@ points = 3
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T11:57:23Z"
+updated = "2026-10-03T11:58:03Z"
 persona = "repository owner"
 capability = "run clocx with a single rendering module that owns all output"
 outcome_text = "output stays consistent and no stray prints creep in"
-scope = ["Cargo.toml", "Cargo.lock", ".gitignore", "crates/clocx/**", "docs/**", "frob.lock"]
+scope = ["Cargo.toml", "Cargo.lock", ".gitignore", "crates/clocx/**", "docs/**", "frob.lock", "tests/inputs/issues/280/L/locale_facets.h", "tests/inputs/issues/280/R/locale_facets.h", "tests/inputs/issues/513/L/hello_1.c", "tests/inputs/issues/513/L/locale_facets.h", "tests/inputs/issues/513/R/hello_2.c", "tests/inputs/issues/513/R/locale_facets.h"]
 
 [[acceptance]]
 text = "Given the workspace, When cargo build runs, Then a clocx binary is produced"
