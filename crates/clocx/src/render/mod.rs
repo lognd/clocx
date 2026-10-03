@@ -7,6 +7,8 @@
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 
 pub mod format;
+#[cfg(test)]
+pub(crate) mod sample;
 pub mod style;
 pub mod table;
 mod text;
@@ -67,12 +69,7 @@ pub fn emit(report: &Report, options: Options) -> io::Result<()> {
 mod tests {
     use super::*;
 
-    fn sample() -> Report {
-        Report {
-            root: "/tmp/x".into(),
-            generated_at: "2026-10-03T12:00:00Z".parse().unwrap(),
-        }
-    }
+    use sample::report as sample;
 
     #[test]
     fn styled_text_has_escapes() {

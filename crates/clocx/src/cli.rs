@@ -32,6 +32,14 @@ pub struct Args {
     #[arg(long, value_enum, default_value_t = ColorWhen::Auto, value_name = "WHEN")]
     pub color: ColorWhen,
 
+    /// Directory for the per-file count cache and the last-run snapshot (default: the user cache dir).
+    #[arg(long, env = "CLOCX_CACHE_DIR", value_name = "DIR")]
+    pub cache_dir: Option<PathBuf>,
+
+    /// Neither read nor write the cache or the last-run snapshot; no change column is shown.
+    #[arg(long)]
+    pub no_cache: bool,
+
     /// More diagnostics on stderr (-v info, -vv debug, -vvv trace); `RUST_LOG` overrides.
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,

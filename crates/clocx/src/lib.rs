@@ -3,18 +3,20 @@
 //! Data flows one way: the compute modules build a [`model::Report`], and
 //! [`render`] alone turns it into output. Diagnostics go through `tracing`.
 
+pub mod cache;
 pub mod cli;
 pub mod error;
 pub mod logging;
 pub mod model;
 pub mod render;
+pub mod totals;
 
 // frob:accept PROC001 because="ExitCode is the exit status of main, not a spawn; PROC001 targets frob's own crates"
 use std::process::ExitCode;
 
 use clap::Parser;
 use jiff::Timestamp;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 use cli::Args;
 use error::Error;
@@ -30,9 +32,26 @@ pub fn build_report(args: &Args) -> Result<Report, Error> {
         source,
     })?;
     info!(root = %root.display(), depth = args.depth, "building report");
+    let store = if args.no_cache {
+        cache::Store::disabled()
+    } else {
+        cache::Store::open(args.cache_dir.as_deref(), &root)
+    };
+    let now = Timestamp::now();
+    let mut counts = store.load_counts();
+    let baseline = store.load_snapshot();
+    let scan = totals::scan(&root, args.depth, &mut counts, baseline.as_ref(), now);
+    // The cache only speeds up later runs; failing to write it is not fatal.
+    if let Err(e) = store.save_counts(&counts) {
+        warn!(error = %e, "count cache not saved");
+    }
+    if let Err(e) = store.save_snapshot(&scan.snapshot) {
+        warn!(error = %e, "snapshot not saved; the next run shows no change column");
+    }
     Ok(Report {
         root: root.display().to_string(),
-        generated_at: Timestamp::now(),
+        generated_at: now,
+        totals: scan.totals,
     })
 }
 
@@ -66,7 +85,7 @@ mod tests {
     use super::*;
 
     fn args(path: &str) -> Args {
-        Args::parse_from(["clocx", "--color", "never", path])
+        Args::parse_from(["clocx", "--color", "never", "--no-cache", path])
     }
 
     #[test]
