@@ -8,7 +8,7 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T12:25:50Z"
+updated = "2026-10-03T12:25:51Z"
 persona = "repository owner"
 capability = "see every worktree of the repository with its in-progress work"
 outcome_text = "work by me and agents is visible before it is merged"
@@ -24,5 +24,5 @@ bound = true
 
 [[acceptance]]
 text = "Given a branch with commits beyond the base, When clocx runs, Then commits ahead and total lines added and removed against the base are shown"
-bound = false
+bound = true
 +++
