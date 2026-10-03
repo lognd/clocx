@@ -1,0 +1,1 @@
+`clocx --live` (`-l`) opens a full-screen dashboard of the same report that refreshes when files change (debounced, ignoring `.gitignore`d paths) and when commits, refs, HEAD or the index change, and every 30 seconds; `q` quits, `r` refreshes.

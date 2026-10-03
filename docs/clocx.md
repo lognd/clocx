@@ -9,8 +9,11 @@ clocx reaches parity for what the owner uses.
 
 ## Usage
 
-    clocx [PATH] [--depth N] [--rows N] [--color auto|always|never]
+    clocx [PATH] [--live] [--depth N] [--rows N] [--color auto|always|never]
           [--base BRANCH] [--cache-dir DIR] [--no-cache] [--json] [-v...]
+
+By default clocx prints the report once and exits. `--live` (`-l`)
+keeps it open as a dashboard instead.
 
 | Flag | Meaning |
 | --- | --- |
@@ -20,6 +23,7 @@ clocx reaches parity for what the owner uses.
 | `--rows N` | Most rows per text table; the rest fold into one dimmed `N more` row. Rows whose code changed are always shown. Default 12; `0` shows all. |
 | `--cache-dir DIR` | Where the count cache and last-run snapshot live; default `<user cache dir>/clocx`. Also `CLOCX_CACHE_DIR`. |
 | `--no-cache` | Read and write no cache or snapshot; the change column is never shown. |
+| `-l, --live` | Full-screen dashboard that refreshes on changes (see Live view). Needs a terminal; not with `--json`. |
 | `--json` | Print the report as one JSON document instead of tables (see JSON below). |
 | `--color WHEN` | `auto` (default) colors only when stdout is a terminal and `NO_COLOR` is unset. |
 | `-v` | More diagnostics on stderr (`-v` info, `-vv` debug, `-vvv` trace). `RUST_LOG` overrides. |
@@ -109,6 +113,40 @@ Binary files count as files touched with no lines. A worktree that
 cannot be read (for example its directory was deleted) shows the reason
 in place of its branch; it does not fail the report.
 
+## Live view
+
+`clocx --live` draws the same report full screen, meant to be left open
+on a second screen:
+
+- top: Activity beside Languages; middle: Where work is happening
+  beside Directories; bottom: Worktrees across the full width; the notes
+  of each table sit on its bottom border;
+- header: root, time of the last refresh, and `refreshing` while one
+  runs; footer: the keys and how many paths are watched.
+
+Keys: `q`, `Esc` or `Ctrl-C` quit; `r` refreshes now.
+
+It refreshes when:
+
+- a file under the root or under any worktree changes and is not
+  ignored by that tree's top-level `.gitignore` (events are debounced:
+  the refresh starts once they have been quiet for 0.4 s);
+- git state changes: refs, `HEAD`, `packed-refs` or the index, in the
+  repository or any worktree (new commits, branch moves, checkouts,
+  staging);
+- 30 seconds pass without one, so the time windows and "ago" columns
+  keep moving.
+
+File reads are not changes (only writes are), so the view's own
+refreshes never trigger more refreshes. Refreshes run in the
+background; requests that arrive during one collapse into one more.
+Caches stay in memory between refreshes, so only changed files are
+recounted and only new commits are diffed. The Change column compares
+with the snapshot from before the view started, and the snapshot is
+saved when the view exits. Diagnostics go to `live.log` in the cache
+directory instead of the screen. Color follows `--color` and
+`NO_COLOR`.
+
 ## JSON
 
 `--json` writes the same report the tables are drawn from, pretty-printed,
@@ -153,13 +191,17 @@ followed by a newline. It is never colored, whatever `--color` says.
 - Control characters in names (odd file names) are shown as `?` in
   tables, so a file name cannot inject terminal escapes; JSON escapes
   them.
-- Diagnostics go through `tracing` to stderr, never to stdout.
+- Diagnostics go through `tracing` to stderr (to `live.log` in the live
+  view), never to stdout. A failed run ends with one line on stderr,
+  `clocx: error: ...`, and exit status 1.
 
 ## Layout
 
 | Path | Role |
 | --- | --- |
 | `crates/clocx/src/main.rs` | Entry point; calls `clocx::run`. |
+| `crates/clocx/src/engine.rs` | Owns the caches of one root; computes a report per refresh. |
+| `crates/clocx/src/live.rs` | Live view event loop: watcher, keys, background refresh. |
 | `crates/clocx/src/cli.rs` | Command-line arguments (clap). |
 | `crates/clocx/src/model.rs` | The typed report. |
 | `crates/clocx/src/totals.rs` | Walk, count, group and diff the line totals. |
@@ -167,7 +209,7 @@ followed by a newline. It is never colored, whatever `--color` says.
 | `crates/clocx/src/git.rs` | Open the repository of a root; git error type. |
 | `crates/clocx/src/activity.rs` | Walk recent history and bucket line churn. |
 | `crates/clocx/src/worktrees.rs` | Status of every worktree against HEAD and the base. |
-| `crates/clocx/src/render/` | All output: tables, styles, formatting. |
+| `crates/clocx/src/render/` | All output: `sections` builds the tables once; `text`, `json` and `live` (ratatui) draw them; `style` is the one palette. |
 | `crates/clocx/src/logging.rs` | `tracing` subscriber setup. |
 | `crates/clocx/src/error.rs` | The run's error type. |
 
