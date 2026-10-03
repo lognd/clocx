@@ -83,6 +83,44 @@ impl Repo {
     }
 }
 
+/// How much of a file git looks at to decide it is binary.
+const BINARY_PROBE: usize = 8_000;
+
+/// Whether content looks binary, by git's rule: a NUL byte near the start.
+pub fn is_binary(data: &[u8]) -> bool {
+    data[..data.len().min(BINARY_PROBE)].contains(&0)
+}
+
+/// Drops the `\r` of every `\r\n`, so a checkout with `core.autocrlf` compares equal to its blob.
+fn normalise_eol(data: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+    if !data.windows(2).any(|w| w == b"\r\n") {
+        return std::borrow::Cow::Borrowed(data);
+    }
+    let mut out = Vec::with_capacity(data.len());
+    for (i, &b) in data.iter().enumerate() {
+        if b == b'\r' && data.get(i + 1) == Some(&b'\n') {
+            continue;
+        }
+        out.push(b);
+    }
+    std::borrow::Cow::Owned(out)
+}
+
+/// Lines added and removed going from `old` to `new`; `None` when either side is binary.
+pub fn line_churn(old: &[u8], new: &[u8]) -> Option<(u64, u64)> {
+    use gix::diff::blob::{Algorithm, Diff, InternedInput};
+    if is_binary(old) || is_binary(new) {
+        return None;
+    }
+    let (old, new) = (normalise_eol(old), normalise_eol(new));
+    if old == new {
+        return Some((0, 0));
+    }
+    let input = InternedInput::new(&old[..], &new[..]);
+    let diff = Diff::compute(Algorithm::Histogram, &input);
+    Some((u64::from(diff.count_additions()), u64::from(diff.count_removals())))
+}
+
 /// Throwaway repositories with commits at chosen times, for tests.
 #[cfg(test)]
 pub mod testrepo {
@@ -195,6 +233,15 @@ mod tests {
         let mut repo = t.open();
         repo.prefix = prefix.into();
         repo
+    }
+
+    #[test]
+    fn line_churn_counts_and_ignores_line_endings() {
+        assert_eq!(line_churn(b"a\nb\n", b"a\nc\nd\n"), Some((2, 1)));
+        assert_eq!(line_churn(b"", b"x\ny\n"), Some((2, 0)));
+        assert_eq!(line_churn(b"a\nb\n", b"a\r\nb\r\n"), Some((0, 0)));
+        assert_eq!(line_churn(b"a\nb\n", b"a\r\nB\r\n"), Some((1, 1)));
+        assert_eq!(line_churn(b"a\0b", b"c"), None);
     }
 
     #[test]

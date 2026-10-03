@@ -12,6 +12,7 @@ pub mod logging;
 pub mod model;
 pub mod render;
 pub mod totals;
+pub mod worktrees;
 
 // frob:accept PROC001 because="ExitCode is the exit status of main, not a spawn; PROC001 targets frob's own crates"
 use std::process::ExitCode;
@@ -22,7 +23,7 @@ use tracing::{debug, error, info, warn};
 
 use cli::Args;
 use error::Error;
-use model::{Activity, Report, Section};
+use model::{Activity, Report, Section, Worktrees};
 
 /// Computes the report for the parsed arguments.
 ///
@@ -50,23 +51,26 @@ pub fn build_report(args: &Args) -> Result<Report, Error> {
     if let Err(e) = store.save_snapshot(&scan.snapshot) {
         warn!(error = %e, "snapshot not saved; the next run shows no change column");
     }
-    let activity = activity_section(&root, args.depth, now, &store);
+    let repo = git::Repo::discover(&root);
+    let activity = activity_section(&repo, args.depth, now, &store);
+    let worktrees = worktrees_section(&repo, &root, args.base.as_deref());
     Ok(Report {
         root: root.display().to_string(),
         generated_at: now,
         totals: scan.totals,
         activity,
+        worktrees,
     })
 }
 
 /// Computes the git activity section; outside a repository or on a git error it is unavailable, not fatal.
 fn activity_section(
-    root: &std::path::Path,
+    repo: &Result<git::Repo, git::GitError>,
     depth: u16,
     now: Timestamp,
     store: &cache::Store,
 ) -> Section<Activity> {
-    let repo = match git::Repo::discover(root) {
+    let repo = match repo {
         Ok(r) => r,
         Err(e) => {
             info!(reason = %e, "no git activity");
@@ -76,7 +80,7 @@ fn activity_section(
         }
     };
     let mut commits = store.load_commits();
-    match activity::collect(&repo, depth, now, &mut commits) {
+    match activity::collect(repo, depth, now, &mut commits) {
         Ok(a) => {
             if let Err(e) = store.save_commits(&commits) {
                 warn!(error = %e, "commit cache not saved");
@@ -88,6 +92,25 @@ fn activity_section(
             Section::Unavailable {
                 reason: e.to_string(),
             }
+        }
+    }
+}
+
+/// Computes the worktree section; outside a repository or on a git error it is unavailable, not fatal.
+fn worktrees_section(
+    repo: &Result<git::Repo, git::GitError>,
+    root: &std::path::Path,
+    base: Option<&str>,
+) -> Section<Worktrees> {
+    let repo = match repo {
+        Ok(r) => r,
+        Err(e) => return Section::Unavailable { reason: e.to_string() },
+    };
+    match worktrees::collect(repo, root, base) {
+        Ok(w) => Section::Ok(w),
+        Err(e) => {
+            warn!(error = %e, "worktrees could not be read");
+            Section::Unavailable { reason: e.to_string() }
         }
     }
 }

@@ -28,6 +28,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..))]
     pub depth: u16,
 
+    /// Base branch that worktrees are compared with (default: `main`, else `master`).
+    #[arg(long, value_name = "BRANCH")]
+    pub base: Option<String>,
+
     /// Most rows per text table; the rest fold into one line (0 shows every row).
     #[arg(long, default_value_t = crate::render::DEFAULT_ROWS, value_name = "N")]
     pub rows: usize,

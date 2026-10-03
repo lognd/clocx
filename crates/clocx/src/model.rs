@@ -14,6 +14,8 @@ pub struct Report {
     pub totals: Totals,
     /// Lines added and removed in recent git history; unavailable outside a repository.
     pub activity: Section<Activity>,
+    /// Every worktree of the repository with its work in progress; unavailable outside a repository.
+    pub worktrees: Section<Worktrees>,
 }
 
 /// A report section that may be unavailable (for example git data outside a repository).
@@ -165,4 +167,38 @@ pub struct Totals {
     pub baseline_at: Option<Timestamp>,
     /// Cache statistics of this scan.
     pub cache: CacheUse,
+}
+
+/// One worktree and the work in progress in it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct WorktreeStatus {
+    /// Short name: the worktree directory's name.
+    pub name: String,
+    /// Absolute path of the worktree.
+    pub path: String,
+    /// Whether the report root lies in this worktree.
+    pub current: bool,
+    /// Checked-out branch, `None` when HEAD is detached or unborn.
+    pub branch: Option<String>,
+    /// Abbreviated HEAD commit id, `None` before the first commit.
+    pub head: Option<String>,
+    /// Uncommitted changes against HEAD: lines added and removed, files touched (`commits` is 0).
+    pub uncommitted: Churn,
+    /// Commits on HEAD that the base branch does not have; `None` without a base.
+    pub ahead: Option<u64>,
+    /// Everything since the merge base with the base branch, committed or not; `None` without a base.
+    pub vs_base: Option<Churn>,
+    /// Newest of the HEAD commit time and the mtimes of changed files.
+    pub last_activity: Option<Timestamp>,
+    /// Why this worktree could not be read, when it could not.
+    pub problem: Option<String>,
+}
+
+/// All worktrees of the repository, most recently active first.
+#[derive(Debug, Clone, Serialize)]
+pub struct Worktrees {
+    /// The base branch that `ahead` and `vs_base` compare with, if one was found.
+    pub base: Option<String>,
+    /// One entry per worktree.
+    pub worktrees: Vec<WorktreeStatus>,
 }
