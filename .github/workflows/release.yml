@@ -3,7 +3,8 @@ name: Release
 # Pushing a tag vX.Y.Z releases clocx X.Y.Z:
 #   1. plan: the tag matches the crate version, and CI passed on the tagged
 #      commit (waits for a running CI, refuses a red or missing one);
-#   2. build: archives and SHA-256 checksums for five targets;
+#   2. build: archives and SHA-256 checksums for five targets (Linux builds
+#      are static musl binaries, so they run on any distribution);
 #   3. github-release: a GitHub release with the archives, notes taken from
 #      the CHANGELOG.md section of the version;
 #   4. crates-io: `cargo publish`, after the GitHub release exists.
@@ -98,10 +99,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
+          # musl, statically linked: a glibc build from a current runner
+          # would refuse to start on older distributions.
+          - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             smoke: true
-          - target: aarch64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
             smoke: true
           - target: aarch64-apple-darwin
@@ -131,6 +134,18 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         run: cargo build --release --locked -p clocx --target "$TARGET"
+      - name: Linux binaries are statically linked
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          info=$(file "target/$TARGET/release/clocx")
+          echo "$info"
+          case "$info" in
+            *"statically linked"*|*"static-pie linked"*) ;;
+            *) echo "::error::target/$TARGET/release/clocx is dynamically linked; release binaries must be static"; exit 1 ;;
+          esac
       - name: Smoke (the binary runs and reports the tagged version)
         if: matrix.smoke
         shell: bash

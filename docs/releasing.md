@@ -43,8 +43,9 @@ The release workflow then:
 
 - checks the tag matches the crate version and that CI passed on that
   exact commit (it waits for a running CI and refuses a red one);
-- builds `clocx` for Linux (x86_64, arm64), macOS (arm64, x86_64) and
-  Windows (x86_64), runs each binary it can, and packages
+- builds `clocx` for Linux (x86_64, arm64; static musl binaries that
+  run on any distribution, checked with `file`), macOS (arm64, x86_64)
+  and Windows (x86_64), runs each binary it can, and packages
   `clocx-X.Y.Z-<target>.tar.gz` (`.zip` on Windows) with a `.sha256`
   file; each archive holds the binary, README, LICENSE, CHANGELOG and the
   reference (`clocx.md`);

@@ -24,8 +24,8 @@ at a glance.
 cargo install clocx
 ```
 
-Prebuilt binaries for Linux (x86_64, arm64), macOS (arm64, x86_64) and
-Windows (x86_64) are attached to every
+Prebuilt binaries for Linux (x86_64, arm64; static, any distribution),
+macOS (arm64, x86_64) and Windows (x86_64) are attached to every
 [GitHub release](https://github.com/lognd/clocx/releases), each with a
 SHA-256 checksum. Download the archive for your platform, check it, and put
 `clocx` on your `PATH`.
