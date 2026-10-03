@@ -1,7 +1,7 @@
 kind = "transition"
 from = "todo"
 to = "in-progress"
-reason = "lease: lognd in /home/logan/projects/cloc-wt/KP840XZ; scope: crates/clocx/**, docs/**, frob.lock, tests/inputs/issues/280/L/locale_facets.h, tests/inputs/issues/280/R/locale_facets.h, tests/inputs/issues/513/L/hello_1.c, tests/inputs/issues/513/L/locale_facets.h, tests/inputs/issues/513/R/hello_2.c, tests/inputs/issues/513/R/locale_facets.h, changelog.d/**; ttl 7200s"
+reason = "lease: lognd in cloc-wt/KP840XZ; scope: crates/clocx/**, docs/**, frob.lock, tests/inputs/issues/280/L/locale_facets.h, tests/inputs/issues/280/R/locale_facets.h, tests/inputs/issues/513/L/hello_1.c, tests/inputs/issues/513/L/locale_facets.h, tests/inputs/issues/513/R/hello_2.c, tests/inputs/issues/513/R/locale_facets.h, changelog.d/**; ttl 7200s"
 at = "2026-10-03T12:06:44Z"
 actor = "lognd"
 rev = 1

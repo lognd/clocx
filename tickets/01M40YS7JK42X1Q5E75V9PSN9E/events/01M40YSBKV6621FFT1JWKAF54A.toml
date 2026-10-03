@@ -1,7 +1,7 @@
 kind = "transition"
 from = "todo"
 to = "in-progress"
-reason = "lease: lognd in /home/logan/projects/cloc-wt/V9PSN9E; scope: .github/workflows/**, .github/dependabot.yml, rust-toolchain.toml, Cargo.toml, Cargo.lock, crates/clocx/**, docs/**, changelog.d/**, CHANGELOG.md; ttl 7200s"
+reason = "lease: lognd in cloc-wt/V9PSN9E; scope: .github/workflows/**, .github/dependabot.yml, rust-toolchain.toml, Cargo.toml, Cargo.lock, crates/clocx/**, docs/**, changelog.d/**, CHANGELOG.md; ttl 7200s"
 at = "2026-10-03T13:20:50Z"
 actor = "lognd"
 rev = 1
