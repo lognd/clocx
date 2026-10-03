@@ -8,7 +8,7 @@ points = 3
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-03T23:40:09Z"
-updated = "2026-10-03T23:52:17Z"
+updated = "2026-10-03T23:52:18Z"
 persona = "clocx owner"
 capability = "a progress line that overwrites itself while files are counted, with an ETA"
 outcome_text = "I am not staring at a blank screen on a large tree"
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the progress line is showing, When a tracing event is logged, Then the line is cleared before the log line is written so the two do not interleave"
-bound = false
+bound = true
 +++
 
 One-shot runs print nothing until the report is ready. Show a single self-overwriting progress line on stderr (phase, bar, done/total, rate, ETA) while walking, counting, reading history and reading worktrees. Compute reports progress through shared atomic counters; only the renderer draws. Log lines must not tear the progress line.
