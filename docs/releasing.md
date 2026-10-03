@@ -55,6 +55,13 @@ The release workflow then:
 A tag with a pre-release suffix (`v0.2.0-rc.1`) makes a GitHub
 pre-release; crates.io treats the version as a pre-release too.
 
+## Dry run
+
+Run the Release workflow by hand from the Actions tab (Run workflow, on
+`master`) to exercise everything short of publishing: the CI gate, the
+five builds with their smoke tests, and the archives (downloadable from
+the run). It creates no release and publishes nothing.
+
 ## If a release fails
 
 Re-run the failed jobs from the Actions tab: every job is safe to repeat

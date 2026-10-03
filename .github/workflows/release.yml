@@ -7,11 +7,14 @@ name: Release
 #   3. github-release: a GitHub release with the archives, notes taken from
 #      the CHANGELOG.md section of the version;
 #   4. crates-io: `cargo publish`, after the GitHub release exists.
+# Running it by hand (workflow_dispatch) is a dry run: the CI gate, builds,
+# smoke tests and archives, but no GitHub release and no publish.
 # See docs/releasing.md for the steps and the one-time crates.io setup.
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions: {}
 
@@ -43,12 +46,18 @@ jobs:
         shell: bash
         env:
           TAG: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
         run: |
+          crate=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "clocx") | .version')
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "dry run of $crate from $TAG"
+            echo "version=$crate" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           version="${TAG#v}"
           if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
             echo "::error::tag $TAG is not vMAJOR.MINOR.PATCH"; exit 1
           fi
-          crate=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "clocx") | .version')
           if [ "$crate" != "$version" ]; then
             echo "::error::tag version $version differs from the clocx crate version $crate"; exit 1
           fi
@@ -163,6 +172,7 @@ jobs:
 
   github-release:
     name: GitHub release
+    if: github.event_name == 'push'
     needs: [plan, build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -211,6 +221,7 @@ jobs:
 
   crates-io:
     name: crates.io
+    if: github.event_name == 'push'
     needs: [plan, github-release]
     runs-on: ubuntu-latest
     timeout-minutes: 20
