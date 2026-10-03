@@ -2,7 +2,8 @@
 id = "01M40SM3NF6Y1AQV510AHS50MQ"
 title = "Worktree status: branch, uncommitted, ahead, vs base, last activity"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
