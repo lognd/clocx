@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Verified: release dry run 37128530136 on ticket/XW8GMB7 built x86_64- and aarch64-unknown-linux-musl, passed the static-link check and smoke tests; the downloaded aarch64 archive passed its sha256 check and ran (clocx --version, a full report of ~/projects/typani) on this Ubuntu 22.04 host (glibc 2.35), where the 0.1.0 gnu build failed with GLIBC_2.39 not found."
+at = "2026-10-03T14:14:30Z"
+actor = "lognd"
+rev = 1
