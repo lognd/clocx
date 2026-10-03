@@ -8,12 +8,12 @@ points = 2
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T14:06:41Z"
-updated = "2026-10-03T14:06:49Z"
+updated = "2026-10-03T14:14:23Z"
 scope = [".github/workflows/release.yml", "README.md", "docs/**"]
 
 [[acceptance]]
 text = "Given the Linux release archives, When the binary is inspected, Then it is statically linked (musl) and the release job fails if it is not"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Linux system with an older glibc such as Ubuntu 22.04, When the downloaded clocx runs, Then it starts and prints a report"
