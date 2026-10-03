@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["cloc", "Unix/**", "tests/**", "sqlite_formatter", "Dockerfile*", "README.md", "changelog.d/**"]
+new = ["cloc", "Unix/**", "tests/**", "sqlite_formatter", "Dockerfile*", "README.md", "changelog.d/**", ".dockerignore", ".devcontainer/**", ".github/**", ".vscode/**", "img/**", ".gitignore", "docs/**", "frob.lock", "Cargo.toml"]
+at = "2026-10-03T13:00:25Z"
+actor = "lognd"
+rev = 1
