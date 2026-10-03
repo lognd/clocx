@@ -2,7 +2,8 @@
 id = "01M40SM3S4FX7HTW7HRKP840XZ"
 title = "JSON output of the report"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
