@@ -1,1 +1,0 @@
-`clocx` shows code, comment and blank lines per language and per directory (`--depth N`), with the change in code lines since the previous run; long tables fold after `--rows N` rows. Per-file counts are cached by content hash (`--cache-dir`, `--no-cache`).

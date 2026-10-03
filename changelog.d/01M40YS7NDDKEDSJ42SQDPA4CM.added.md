@@ -1,1 +1,0 @@
-The README opens with a banner, CI, crates.io, release, license, MSRV and platform badges, an install section and a rendered example report; CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms and a pull request template describe how to work on clocx.

@@ -1,1 +1,0 @@
-`clocx` shows recent change activity from git history: lines added and removed, files touched and commits over the last hour, day, 7 and 30 days, with trend sparklines, and the same broken down by directory ("Where work is happening").

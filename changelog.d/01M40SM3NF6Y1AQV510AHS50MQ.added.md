@@ -1,1 +1,0 @@
-`clocx` lists every git worktree of the repository with its branch, uncommitted lines added and removed against HEAD, commits ahead of the base branch, total lines against the base (committed and uncommitted), and time of last activity; `--base BRANCH` picks the base (default `main`, else `master`).
