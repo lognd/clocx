@@ -14,10 +14,6 @@ fn clocx(args: &[&str]) -> std::process::Output {
 }
 
 // frob:tests crates/clocx/src/lib.rs::run kind=integration
-// frob:tests crates/clocx/src/lib.rs::run_with kind=integration
-// frob:tests crates/clocx/src/lib.rs::build_report kind=integration
-// frob:tests crates/clocx/src/render/mod.rs::emit kind=integration
-// frob:tests crates/clocx/src/logging.rs::init kind=integration
 #[test]
 fn report_into_a_pipe_is_plain_and_succeeds() {
     let out = clocx(&[env!("CARGO_MANIFEST_DIR")]);
@@ -30,6 +26,7 @@ fn report_into_a_pipe_is_plain_and_succeeds() {
     );
 }
 
+// frob:tests crates/clocx/src/render/mod.rs::emit kind=integration
 #[test]
 fn color_always_forces_escapes_into_a_pipe() {
     let out = clocx(&["--color", "always", env!("CARGO_MANIFEST_DIR")]);
@@ -37,6 +34,7 @@ fn color_always_forces_escapes_into_a_pipe() {
     assert!(out.stdout.contains(&0x1b));
 }
 
+// frob:tests crates/clocx/src/logging.rs::init kind=integration
 #[test]
 fn missing_root_fails_with_a_message_on_stderr() {
     let out = clocx(&["/definitely/not/here"]);

@@ -60,3 +60,29 @@ pub fn run() -> ExitCode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(path: &str) -> Args {
+        Args::parse_from(["clocx", "--color", "never", path])
+    }
+
+    #[test]
+    fn build_report_canonicalises_the_root() {
+        let report = build_report(&args(env!("CARGO_MANIFEST_DIR"))).unwrap();
+        assert!(std::path::Path::new(&report.root).is_absolute());
+    }
+
+    #[test]
+    fn build_report_rejects_a_missing_root() {
+        let err = build_report(&args("/definitely/not/here")).unwrap_err();
+        assert!(matches!(err, Error::Root { .. }), "{err}");
+    }
+
+    #[test]
+    fn run_with_writes_the_report() {
+        run_with(&args(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    }
+}
