@@ -8,7 +8,7 @@ points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:51:05Z"
-updated = "2026-10-03T12:59:52Z"
+updated = "2026-10-03T12:59:55Z"
 scope = ["crates/clocx/**", "docs/**", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a count cache written by an earlier version, When clocx runs, Then the stale cache is discarded and files are recounted"
-bound = false
+bound = true
 +++
 
 Found in the parity check against Perl cloc (--vcs=git) on typani, mdcat, lograder and frob: YAML under .github was missing and Python code was 26-43% above cloc because docstrings counted as code.
