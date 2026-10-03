@@ -1,0 +1,15 @@
+kind = "create"
+title = "Recent change activity from git history"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M40SKJNHMPP34A591K4MKVXS"
+persona = "repository owner"
+capability = "see lines added and removed and files touched over the last hour, day, 7 and 30 days by directory"
+outcome_text = "I see where work is happening right now"
+scope = ["crates/clocx/**", "docs/**", "Cargo.lock"]
+acceptance = ["Given commits at known times, When clocx runs, Then added, removed, files and commits are reported for 1h, 24h, 7d and 30d windows", "Given commits touching several directories, When clocx runs, Then activity is broken down per directory at the configured depth", "Given activity in a window, When clocx renders, Then a trend sparkline of bucketed changes is shown"]
+at = "2026-10-03T11:50:35Z"
+actor = "lognd"
+rev = 1
