@@ -32,6 +32,10 @@ pub struct Args {
     #[arg(long, default_value_t = crate::render::DEFAULT_ROWS, value_name = "N")]
     pub rows: usize,
 
+    /// Print the report as one JSON document instead of tables.
+    #[arg(long)]
+    pub json: bool,
+
     /// When to color the output.
     #[arg(long, value_enum, default_value_t = ColorWhen::Auto, value_name = "WHEN")]
     pub color: ColorWhen,

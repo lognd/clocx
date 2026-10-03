@@ -10,7 +10,7 @@ clocx reaches parity for what the owner uses.
 ## Usage
 
     clocx [PATH] [--depth N] [--rows N] [--color auto|always|never]
-          [--cache-dir DIR] [--no-cache] [-v...]
+          [--cache-dir DIR] [--no-cache] [--json] [-v...]
 
 | Flag | Meaning |
 | --- | --- |
@@ -19,6 +19,7 @@ clocx reaches parity for what the owner uses.
 | `--rows N` | Most rows per text table; the rest fold into one dimmed `N more` row. Rows whose code changed are always shown. Default 12; `0` shows all. |
 | `--cache-dir DIR` | Where the count cache and last-run snapshot live; default `<user cache dir>/clocx`. Also `CLOCX_CACHE_DIR`. |
 | `--no-cache` | Read and write no cache or snapshot; the change column is never shown. |
+| `--json` | Print the report as one JSON document instead of tables (see JSON below). |
 | `--color WHEN` | `auto` (default) colors only when stdout is a terminal and `NO_COLOR` is unset. |
 | `-v` | More diagnostics on stderr (`-v` info, `-vv` debug, `-vvv` trace). `RUST_LOG` overrides. |
 
@@ -53,6 +54,21 @@ logged and rebuilt, never an error. Like git's index, an edit that keeps
 both size and mtime unchanged is not noticed until the file changes
 again.
 
+## JSON
+
+`--json` writes the same report the tables are drawn from, pretty-printed,
+followed by a newline. It is never colored, whatever `--color` says.
+
+- `schema_version` (1) comes first; it is bumped on any incompatible
+  change to the shape.
+- `root`, `generated_at` (RFC 3339, UTC).
+- `totals`: `depth`, `languages` and `directories` (every row, not
+  folded; each has `name`, `counts` with `files`, `code`, `comments`,
+  `blanks`, and `code_delta`), `total`, `baseline_at`, and `cache`
+  (`unchanged`, `hash_hits`, `counted`, `unreadable`).
+- Values that are unknown are `null`, never absent: `code_delta` and
+  `baseline_at` without a previous run.
+
 ## Output rules
 
 - One module, `crates/clocx/src/render`, writes all output. Every other
@@ -69,6 +85,9 @@ again.
   dimmed rules and totals, cyan section titles, blue sparklines.
 - Numbers are exact up to 99,999 (with thousands separators), then
   abbreviated (`123.5k`, `12.3M`). Zero deltas are left blank.
+- Control characters in names (odd file names) are shown as `?` in
+  tables, so a file name cannot inject terminal escapes; JSON escapes
+  them.
 - Diagnostics go through `tracing` to stderr, never to stdout.
 
 ## Layout

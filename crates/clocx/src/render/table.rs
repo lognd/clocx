@@ -26,11 +26,22 @@ pub struct Cell {
     style: Style,
 }
 
+/// Replaces control characters (from odd file names) so cells cannot inject terminal escapes.
+fn sanitize(text: String) -> String {
+    if text.chars().any(char::is_control) {
+        text.chars()
+            .map(|c| if c.is_control() { '?' } else { c })
+            .collect()
+    } else {
+        text
+    }
+}
+
 impl Cell {
     /// An unstyled cell.
     pub fn plain(text: impl Into<String>) -> Self {
         Self {
-            text: text.into(),
+            text: sanitize(text.into()),
             style: Style::new(),
         }
     }
@@ -38,7 +49,7 @@ impl Cell {
     /// A cell painted with `style`.
     pub fn styled(text: impl Into<String>, style: Style) -> Self {
         Self {
-            text: text.into(),
+            text: sanitize(text.into()),
             style,
         }
     }
@@ -177,6 +188,12 @@ mod tests {
             spark: p,
             warn: p,
         }
+    }
+
+    #[test]
+    fn control_characters_are_replaced() {
+        assert_eq!(Cell::plain("a\u{1b}[31mb\n").text, "a?[31mb?");
+        assert_eq!(Cell::plain("plain").text, "plain");
     }
 
     #[test]

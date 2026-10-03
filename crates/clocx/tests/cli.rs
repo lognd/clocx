@@ -100,3 +100,15 @@ fn no_cache_never_shows_change() {
         "nothing written"
     );
 }
+
+// frob:tests crates/clocx/src/render/json.rs::write kind=integration
+#[test]
+fn json_flag_prints_one_parseable_document() {
+    let out = clocx(&["--json", "--color", "always", env!("CARGO_MANIFEST_DIR")]);
+    assert!(out.status.success());
+    assert!(!out.stdout.contains(&0x1b), "JSON is never colored");
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.trim_start().starts_with('{') && text.trim_end().ends_with('}'));
+    assert!(text.contains("\"schema_version\": 1"));
+    assert!(text.contains("\"languages\""));
+}

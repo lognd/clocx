@@ -65,6 +65,11 @@ pub fn run_with(args: &Args) -> Result<(), Error> {
     render::emit(
         &report,
         render::Options {
+            format: if args.json {
+                render::Format::Json
+            } else {
+                render::Format::Text
+            },
             color: args.color,
             rows: args.rows,
         },
