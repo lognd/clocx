@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:37:19Z"
+digest = "bd0f14f684d7eaffefe7b551c67f3aeabdeeea9b4da287becc17da8a45ba022f"
+provider = "file"
+ref = ".github/PULL_REQUEST_TEMPLATE.md"
+size = 983
+status = "measured"
+at = "2026-10-03T13:37:19Z"
+actor = "lognd"
+rev = 1
