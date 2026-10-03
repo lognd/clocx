@@ -2,13 +2,13 @@
 id = "01M40WNC6J55Z9D0EFTNPA6CW6"
 title = "Remove frob:accept PROC001 workarounds now that frob scopes the rule"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:43:43Z"
-updated = "2026-10-03T12:43:43Z"
+updated = "2026-10-03T12:43:53Z"
 scope = ["crates/clocx/**", "frob.lock"]
 
 [[acceptance]]
