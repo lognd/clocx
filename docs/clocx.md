@@ -1,11 +1,11 @@
 # clocx
 
-Explanation and reference for clocx, the Rust tool in this fork of cloc.
+Explanation and reference for clocx, a Rust tool that began as a fork of cloc.
 clocx shows where code is, how much of it there is, and where work is
 happening right now, across every git worktree of a repository.
 
-The Perl `cloc` stays in the repository as a behaviour reference until
-clocx reaches parity for what the owner uses.
+The Perl cloc was removed once clocx reached parity for the owner's use
+(see Differences from cloc); it remains in the git history.
 
 ## Usage
 
