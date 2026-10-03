@@ -2,13 +2,13 @@
 id = "01M40YS7NDDKEDSJ42SQDPA4CM"
 title = "Project front page: banner, badges and community files"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T13:20:46Z"
-updated = "2026-10-03T13:20:46Z"
+updated = "2026-10-03T13:32:07Z"
 scope = ["README.md", "docs/**", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md", ".github/ISSUE_TEMPLATE/**", ".github/PULL_REQUEST_TEMPLATE.md", "changelog.d/**"]
 
 [[acceptance]]
