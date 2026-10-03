@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:03:58Z"
+digest = "c2cf3a19739e546c014bc4f70b99a807e6f2066912b5d49c9905a0e028895560"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling clocx v0.1.0 (/home/logan/projects/cloc/crates/clocx)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.45s
+────────────
+ Nextest run ID 84770c12-ea6a-49fe-a05a-f9206f28e317 with nextest profile: default
+    Starting 3 tests across 5 binaries (82 tests skipped)
+        PASS [   1.615s] (1/3) clocx::cli second_run_shows_change_since_the_first
+        PASS [   2.270s] (2/3) clocx::cli fresh_commit_shows_in_the_last_hour
+        PASS [   2.970s] (3/3) clocx::cli worktrees_show_uncommitted_work_and_progress
+────────────
+     Summary [   2.974s] 3 tests run: 3 passed, 82 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/fresh_commit_shows_in_the_last_hour|worktrees_show_uncommitted_work_and_progress|second_run_shows_change_since_the_first/)"
+size = 766
+status = "measured"
+tests = ["second_run_shows_change_since_the_first", "fresh_commit_shows_in_the_last_hour", "worktrees_show_uncommitted_work_and_progress"]
+at = "2026-10-03T13:03:58Z"
+actor = "lognd"
+rev = 1
