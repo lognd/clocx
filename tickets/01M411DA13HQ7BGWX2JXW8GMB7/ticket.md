@@ -2,13 +2,13 @@
 id = "01M411DA13HQ7BGWX2JXW8GMB7"
 title = "Linux release binaries need glibc 2.39"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T14:06:41Z"
-updated = "2026-10-03T14:06:41Z"
+updated = "2026-10-03T14:06:49Z"
 scope = [".github/workflows/release.yml", "README.md", "docs/**"]
 
 [[acceptance]]
