@@ -39,8 +39,7 @@ impl Default for Theme {
 }
 
 impl Theme {
-    /// A theme with no styles at all, so tests can compare plain text.
-    #[cfg(test)]
+    /// A theme with no styles at all: for tests, and for the live view when color is off.
     pub fn plain() -> Self {
         let p = Style::new();
         Self {

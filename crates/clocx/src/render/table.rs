@@ -7,8 +7,8 @@ use super::style::{Theme, paint};
 
 /// Horizontal rule glyph.
 const RULE: char = '\u{2500}';
-/// Spaces between columns.
-const GAP: usize = 2;
+/// Spaces between columns (the live view uses the same spacing).
+pub const GAP: usize = 2;
 
 /// Which side of its column a cell hugs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,8 +58,13 @@ impl Cell {
         }
     }
 
+    /// The styled runs, for renderers that draw cells themselves.
+    pub fn runs(&self) -> &[(String, Style)] {
+        &self.spans
+    }
+
     /// Display width of all runs together.
-    fn width(&self) -> usize {
+    pub fn width(&self) -> usize {
         self.spans.iter().map(|(t, _)| t.width()).sum()
     }
 
@@ -121,6 +126,26 @@ impl Table {
         self.total = Some(cells);
     }
 
+    /// The table title.
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    /// The `(header, alignment)` columns.
+    pub fn columns(&self) -> &[(String, Align)] {
+        &self.columns
+    }
+
+    /// The data rows.
+    pub fn rows(&self) -> &[Vec<Cell>] {
+        &self.rows
+    }
+
+    /// The total row, if any.
+    pub fn total_row(&self) -> Option<&[Cell]> {
+        self.total.as_deref()
+    }
+
     /// Whether the table has no data rows.
     pub fn is_empty(&self) -> bool {
         self.rows.is_empty()
@@ -154,7 +179,7 @@ impl Table {
     }
 
     /// Column widths: the widest of header and every cell, by display width.
-    fn widths(&self) -> Vec<usize> {
+    pub fn widths(&self) -> Vec<usize> {
         let mut widths: Vec<usize> = self.columns.iter().map(|(h, _)| h.width()).collect();
         for row in self.rows.iter().chain(self.total.iter()) {
             for (w, cell) in widths.iter_mut().zip(row) {

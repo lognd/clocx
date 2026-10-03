@@ -8,8 +8,10 @@
 
 pub mod format;
 mod json;
+pub mod live;
 #[cfg(test)]
 pub(crate) mod sample;
+pub mod sections;
 pub mod style;
 pub mod table;
 mod text;

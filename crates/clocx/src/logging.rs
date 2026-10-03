@@ -25,6 +25,36 @@ pub fn init(verbose: u8) {
         .try_init();
 }
 
+/// Installs the subscriber for the live view: stderr would corrupt the screen, so logs go to
+/// `live.log` in the cache directory, or nowhere when there is none.
+pub fn init_live(verbose: u8, cache_dir: Option<&std::path::Path>, no_cache: bool) {
+    let dir = if no_cache {
+        None
+    } else {
+        cache_dir
+            .map(std::path::Path::to_path_buf)
+            .or_else(|| dirs::cache_dir().map(|d| d.join("clocx")))
+    };
+    let file = dir.and_then(|d| {
+        std::fs::create_dir_all(&d).ok()?;
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(d.join("live.log"))
+            .ok()
+    });
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(default_directive(verbose)));
+    let builder = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_ansi(false)
+        .with_target(false);
+    let _ = match file {
+        Some(f) => builder.with_writer(std::sync::Mutex::new(f)).try_init(),
+        None => builder.with_writer(std::io::sink).try_init(),
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

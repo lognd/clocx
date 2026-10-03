@@ -37,8 +37,12 @@ pub struct Args {
     pub rows: usize,
 
     /// Print the report as one JSON document instead of tables.
-    #[arg(long)]
+    #[arg(long, conflicts_with = "live")]
     pub json: bool,
+
+    /// Live view: a full-screen dashboard that refreshes on file and git changes (q quits).
+    #[arg(short, long)]
+    pub live: bool,
 
     /// When to color the output.
     #[arg(long, value_enum, default_value_t = ColorWhen::Auto, value_name = "WHEN")]

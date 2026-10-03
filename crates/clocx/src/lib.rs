@@ -1,13 +1,16 @@
 //! clocx: count lines of code and show where work is happening, across git worktrees.
 //!
-//! Data flows one way: the compute modules build a [`model::Report`], and
-//! [`render`] alone turns it into output. Diagnostics go through `tracing`.
+//! Data flows one way: the compute modules build a [`model::Report`] (driven
+//! by [`engine::Engine`]), and [`render`] alone turns it into output. Diagnostics
+//! go through `tracing`.
 
 pub mod activity;
 pub mod cache;
 pub mod cli;
+pub mod engine;
 pub mod error;
 pub mod git;
+pub mod live;
 pub mod logging;
 pub mod model;
 pub mod render;
@@ -18,135 +21,59 @@ pub mod worktrees;
 use std::process::ExitCode;
 
 use clap::Parser;
-use jiff::Timestamp;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error};
 
 use cli::Args;
+use engine::Engine;
 use error::Error;
-use model::{Activity, Report, Section, Worktrees};
+use model::Report;
 
-/// Computes the report for the parsed arguments.
+/// Computes one report for the parsed arguments and saves the caches and baseline.
 ///
 /// # Errors
 /// Returns [`Error::Root`] when the root path cannot be resolved.
 pub fn build_report(args: &Args) -> Result<Report, Error> {
-    let root = args.path.canonicalize().map_err(|source| Error::Root {
-        path: args.path.clone(),
-        source,
-    })?;
-    info!(root = %root.display(), depth = args.depth, "building report");
-    let store = if args.no_cache {
-        cache::Store::disabled()
-    } else {
-        cache::Store::open(args.cache_dir.as_deref(), &root)
-    };
-    let now = Timestamp::now();
-    let mut counts = store.load_counts();
-    let baseline = store.load_snapshot();
-    let scan = totals::scan(&root, args.depth, &mut counts, baseline.as_ref(), now);
-    // The cache only speeds up later runs; failing to write it is not fatal.
-    if let Err(e) = store.save_counts(&counts) {
-        warn!(error = %e, "count cache not saved");
-    }
-    if let Err(e) = store.save_snapshot(&scan.snapshot) {
-        warn!(error = %e, "snapshot not saved; the next run shows no change column");
-    }
-    let repo = git::Repo::discover(&root);
-    let activity = activity_section(&repo, args.depth, now, &store);
-    let worktrees = worktrees_section(&repo, &root, args.base.as_deref());
-    Ok(Report {
-        root: root.display().to_string(),
-        generated_at: now,
-        totals: scan.totals,
-        activity,
-        worktrees,
-    })
+    let mut engine = Engine::open(args)?;
+    let report = engine.refresh();
+    engine.persist();
+    Ok(report)
 }
 
-/// Computes the git activity section; outside a repository or on a git error it is unavailable, not fatal.
-fn activity_section(
-    repo: &Result<git::Repo, git::GitError>,
-    depth: u16,
-    now: Timestamp,
-    store: &cache::Store,
-) -> Section<Activity> {
-    let repo = match repo {
-        Ok(r) => r,
-        Err(e) => {
-            info!(reason = %e, "no git activity");
-            return Section::Unavailable {
-                reason: e.to_string(),
-            };
-        }
-    };
-    let mut commits = store.load_commits();
-    match activity::collect(repo, depth, now, &mut commits) {
-        Ok(a) => {
-            if let Err(e) = store.save_commits(&commits) {
-                warn!(error = %e, "commit cache not saved");
-            }
-            Section::Ok(a)
-        }
-        Err(e) => {
-            warn!(error = %e, "git history could not be read");
-            Section::Unavailable {
-                reason: e.to_string(),
-            }
-        }
+/// The render options the arguments ask for.
+fn render_options(args: &Args) -> render::Options {
+    render::Options {
+        format: if args.json {
+            render::Format::Json
+        } else {
+            render::Format::Text
+        },
+        color: args.color,
+        rows: args.rows,
     }
 }
 
-/// Computes the worktree section; outside a repository or on a git error it is unavailable, not fatal.
-fn worktrees_section(
-    repo: &Result<git::Repo, git::GitError>,
-    root: &std::path::Path,
-    base: Option<&str>,
-) -> Section<Worktrees> {
-    let repo = match repo {
-        Ok(r) => r,
-        Err(e) => {
-            return Section::Unavailable {
-                reason: e.to_string(),
-            };
-        }
-    };
-    match worktrees::collect(repo, root, base) {
-        Ok(w) => Section::Ok(w),
-        Err(e) => {
-            warn!(error = %e, "worktrees could not be read");
-            Section::Unavailable {
-                reason: e.to_string(),
-            }
-        }
-    }
-}
-
-/// Runs clocx with already-parsed arguments.
+/// Runs clocx with already-parsed arguments: the live view with `--live`, else one report.
 ///
 /// # Errors
-/// Returns the first error of computing or writing the report.
+/// Returns the first error of computing, writing or (live) drawing the report.
 pub fn run_with(args: &Args) -> Result<(), Error> {
+    if args.live {
+        let engine = Engine::open(args)?;
+        return live::run(engine, args, render_options(args));
+    }
     let report = build_report(args)?;
-    debug!("rendering text report");
-    render::emit(
-        &report,
-        render::Options {
-            format: if args.json {
-                render::Format::Json
-            } else {
-                render::Format::Text
-            },
-            color: args.color,
-            rows: args.rows,
-        },
-    )
-    .map_err(Error::Output)
+    debug!("rendering report");
+    render::emit(&report, render_options(args)).map_err(Error::Output)
 }
 
 /// Parses the command line, runs, and maps the outcome to an exit code.
 pub fn run() -> ExitCode {
     let args = Args::parse();
-    logging::init(args.verbose);
+    if args.live {
+        logging::init_live(args.verbose, args.cache_dir.as_deref(), args.no_cache);
+    } else {
+        logging::init(args.verbose);
+    }
     match run_with(&args) {
         Ok(()) => ExitCode::SUCCESS,
         // A closed pipe (clocx | head) is a normal way to stop reading.
@@ -181,5 +108,11 @@ mod tests {
     #[test]
     fn run_with_writes_the_report() {
         run_with(&args(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    }
+
+    #[test]
+    fn live_conflicts_with_json() {
+        assert!(Args::try_parse_from(["clocx", "--live", "--json"]).is_err());
+        assert!(Args::try_parse_from(["clocx", "-l"]).unwrap().live);
     }
 }
