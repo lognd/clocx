@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Scope widened with six exact symlink paths under tests/inputs/issues/ only to work around a SCOPE001 false positive (frob follows file symlinks in the worktree diff); the branch does not change them. See FROB_FEEDBACK.md item 3."
+at = "2026-10-03T11:58:07Z"
+actor = "lognd"
+rev = 1
