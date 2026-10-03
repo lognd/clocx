@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:37:19Z"
+digest = "836161aa11d8e159a646354727b2e3acc791463c4515975e5baa42d76d65032c"
+provider = "file"
+ref = ".github/ISSUE_TEMPLATE/bug_report.yml"
+size = 1657
+status = "measured"
+at = "2026-10-03T13:37:19Z"
+actor = "lognd"
+rev = 1
