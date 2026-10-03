@@ -4,6 +4,7 @@ start = "2026-10-03"
 end = "2026-10-08"
 goal = "cloc parity and Perl removal"
 state = "planned"
+tickets = ["01M40X2WJN2EYZ0KPNQCD6C3VR"]
 created = "2026-10-03T12:51:10Z"
-updated = "2026-10-03T12:51:10Z"
+updated = "2026-10-03T12:51:14Z"
 +++
