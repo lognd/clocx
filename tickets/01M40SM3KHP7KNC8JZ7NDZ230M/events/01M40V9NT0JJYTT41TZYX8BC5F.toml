@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:19:51Z"
+digest = "75281b05038a0b015ae856933551f79720153a9eb577dbe220c1815d3d545d41"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+────────────
+ Nextest run ID 1709e6c5-7335-44af-be86-03e17967af43 with nextest profile: default
+    Starting 6 tests across 4 binaries (51 tests skipped)
+        PASS [   0.142s] (1/6) clocx activity::tests::empty_repository_has_no_activity
+        PASS [   0.194s] (2/6) clocx activity::tests::commits_are_cached_and_pruned
+        PASS [   0.211s] (3/6) clocx::cli fresh_commit_shows_in_the_last_hour
+        PASS [   0.218s] (4/6) clocx activity::tests::non_code_files_do_not_count
+        PASS [   0.239s] (5/6) clocx activity::tests::windows_count_lines_files_and_commits
+        PASS [   0.271s] (6/6) clocx activity::tests::other_branches_count_and_merges_do_not_double_count
+────────────
+     Summary [   0.275s] 6 tests run: 6 passed, 51 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/windows_count_lines_files_and_commits|other_branches_count_and_merges|non_code_files_do_not_count|fresh_commit_shows_in_the_last_hour|commits_are_cached_and_pruned|empty_repository_has_no_activity/)"
+size = 876
+status = "measured"
+tests = ["fresh_commit_shows_in_the_last_hour", "activity::tests::empty_repository_has_no_activity", "activity::tests::commits_are_cached_and_pruned", "activity::tests::non_code_files_do_not_count", "activity::tests::windows_count_lines_files_and_commits", "activity::tests::other_branches_count_and_merges_do_not_double_count"]
+at = "2026-10-03T12:19:51Z"
+actor = "lognd"
+rev = 1
