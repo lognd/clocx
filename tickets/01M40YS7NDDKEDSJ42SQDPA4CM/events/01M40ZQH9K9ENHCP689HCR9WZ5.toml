@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:37:19Z"
+digest = "0a97b9593a1b20ff0661df9c2ff187e2e0b902ee783eedd3872088f1d0a624fc"
+provider = "file"
+ref = "CODE_OF_CONDUCT.md"
+size = 5470
+status = "measured"
+at = "2026-10-03T13:37:19Z"
+actor = "lognd"
+rev = 1
