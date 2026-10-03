@@ -1,9 +1,12 @@
 //! The live view's event loop: watch files and git refs, refresh in the background, redraw.
 //!
-//! Three threads feed one channel: a debounced file watcher, a key reader,
-//! and the refresh worker that owns the [`Engine`]. Refresh requests that
-//! pile up while one is running collapse into a single refresh. A periodic
-//! tick refreshes too, so the time windows and "ago" columns keep moving.
+//! Three sources feed one channel: a file watcher, a key reader, and the
+//! refresh worker that owns the [`Engine`]. File events are debounced here:
+//! a refresh starts once events have been quiet for [`DEBOUNCE`]. Access
+//! events (files being read, including by our own refresh) are dropped, or
+//! every refresh would trigger the next. Refresh requests that pile up while
+//! one is running collapse into a single refresh. A periodic tick refreshes
+//! too, so the time windows and "ago" columns keep moving.
 //! All drawing is done by [`crate::render::live`].
 
 use std::collections::HashSet;
@@ -15,8 +18,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use notify_debouncer_mini::notify::RecursiveMode;
-use notify_debouncer_mini::{DebounceEventResult, new_debouncer};
+use notify::{EventKind, RecursiveMode, Watcher};
 use ratatui::crossterm::event::{
     self, Event as TermEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers,
 };
@@ -124,6 +126,16 @@ impl Default for Filter {
     }
 }
 
+/// Whether a watcher event can mean content changed: reads cannot, but closing a file after writing can.
+fn relevant_kind(kind: &EventKind) -> bool {
+    use notify::event::{AccessKind, AccessMode};
+    match kind {
+        EventKind::Access(AccessKind::Close(AccessMode::Write)) => true,
+        EventKind::Access(_) => false,
+        _ => true,
+    }
+}
+
 /// The theme the live view uses: plain when color is off by flag or `NO_COLOR`.
 fn theme(color: ColorWhen) -> Theme {
     let no_color = std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty());
@@ -210,19 +222,21 @@ pub fn run(engine: Engine, args: &Args, options: Options) -> Result<(), Error> {
 
     let watch_events = events_tx.clone();
     let watch_filter = Arc::clone(&filter);
-    let mut debouncer = new_debouncer(DEBOUNCE, move |res: DebounceEventResult| match res {
-        Ok(evs) => {
-            let f = watch_filter
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if let Some(e) = evs.iter().find(|e| f.relevant(&e.path)) {
-                debug!(path = %e.path.display(), "change detected");
-                let _ = watch_events.send(Event::Changed);
+    let mut watcher =
+        notify::recommended_watcher(move |res: notify::Result<notify::Event>| match res {
+            Ok(ev) if relevant_kind(&ev.kind) => {
+                let f = watch_filter
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(p) = ev.paths.iter().find(|p| f.relevant(p)) {
+                    debug!(path = %p.display(), kind = ?ev.kind, "change detected");
+                    let _ = watch_events.send(Event::Changed);
+                }
             }
-        }
-        Err(e) => warn!(error = %e, "watch error"),
-    })
-    .map_err(Error::Watch)?;
+            Ok(_) => {}
+            Err(e) => warn!(error = %e, "watch error"),
+        })
+        .map_err(Error::Watch)?;
 
     let stop = Arc::new(AtomicBool::new(false));
     let keys = {
@@ -241,13 +255,18 @@ pub fn run(engine: Engine, args: &Args, options: Options) -> Result<(), Error> {
     let mut watched: HashSet<PathBuf> = HashSet::new();
     let _ = requests.send(());
     let mut last_request = Instant::now();
+    // When the first file event of a burst arrived; cleared when its refresh is requested.
+    let mut pending: Option<Instant> = None;
 
     let result = (|| -> Result<(), Error> {
         loop {
             terminal
                 .draw(|f| draw(f, &status, &theme, options.rows))
                 .map_err(Error::Terminal)?;
-            let wait = TICK.saturating_sub(last_request.elapsed());
+            let wait = match pending {
+                Some(since) => DEBOUNCE.saturating_sub(since.elapsed()),
+                None => TICK.saturating_sub(last_request.elapsed()),
+            };
             let mut refresh = false;
             match events.recv_timeout(wait) {
                 Ok(Event::Key(k)) => match action(k) {
@@ -256,14 +275,15 @@ pub fn run(engine: Engine, args: &Args, options: Options) -> Result<(), Error> {
                     None => {}
                 },
                 Ok(Event::Resize) => {}
-                Ok(Event::Changed) => refresh = true,
+                // Restart the quiet period on every event of a burst.
+                Ok(Event::Changed) => pending = Some(Instant::now()),
                 Ok(Event::Report(report)) => {
                     status.refreshing = false;
                     for target in watch_targets(&report, git_dir.as_deref()) {
                         if watched.contains(&target) {
                             continue;
                         }
-                        match debouncer.watcher().watch(&target, RecursiveMode::Recursive) {
+                        match watcher.watch(&target, RecursiveMode::Recursive) {
                             Ok(()) => {
                                 info!(path = %target.display(), "watching");
                                 if git_dir.as_deref() != Some(target.as_path()) {
@@ -280,10 +300,16 @@ pub fn run(engine: Engine, args: &Args, options: Options) -> Result<(), Error> {
                     status.watching = watched.len();
                     status.report = Some(*report);
                 }
-                Err(RecvTimeoutError::Timeout) => refresh = true,
+                Err(RecvTimeoutError::Timeout) => {
+                    if pending.is_some_and(|since| since.elapsed() >= DEBOUNCE) || pending.is_none()
+                    {
+                        refresh = true;
+                    }
+                }
                 Err(RecvTimeoutError::Disconnected) => return Ok(()),
             }
             if refresh {
+                pending = None;
                 status.refreshing = true;
                 last_request = Instant::now();
                 let _ = requests.send(());
@@ -293,7 +319,7 @@ pub fn run(engine: Engine, args: &Args, options: Options) -> Result<(), Error> {
 
     let restored = ratatui::try_restore().map_err(Error::Terminal);
     stop.store(true, Ordering::Relaxed);
-    drop(debouncer);
+    drop(watcher);
     drop(requests);
     drop(events);
     if worker.join().is_err() {
@@ -387,6 +413,22 @@ mod tests {
         assert_eq!(reports, 1, "five queued requests give one refresh");
         let saved = std::fs::read_dir(cache.path()).unwrap().count();
         assert_eq!(saved, 1, "caches written on exit");
+    }
+
+    #[test]
+    fn reads_are_not_changes() {
+        use notify::event::{AccessKind, AccessMode, CreateKind, ModifyKind};
+        assert!(!relevant_kind(&EventKind::Access(AccessKind::Open(
+            AccessMode::Read
+        ))));
+        assert!(!relevant_kind(&EventKind::Access(AccessKind::Close(
+            AccessMode::Read
+        ))));
+        assert!(relevant_kind(&EventKind::Access(AccessKind::Close(
+            AccessMode::Write
+        ))));
+        assert!(relevant_kind(&EventKind::Modify(ModifyKind::Any)));
+        assert!(relevant_kind(&EventKind::Create(CreateKind::File)));
     }
 
     #[test]

@@ -90,6 +90,23 @@ pub fn write_to<W: anstream::stream::RawStream + anstream::stream::AsLockedWrite
     stream.flush()
 }
 
+/// Formats the message a failed run leaves for the user: `clocx: error: ...`, the label in red.
+pub fn error_text(error: &dyn std::fmt::Display) -> String {
+    let theme = Theme::default();
+    format!(
+        "{}: {} {error}\n",
+        style::paint(theme.title, "clocx"),
+        style::paint(theme.removed, "error:")
+    )
+}
+
+/// Writes the failure message to stderr; color follows the same rules as the report.
+pub fn emit_error(error: &dyn std::fmt::Display, color: ColorWhen) {
+    let mut stream = AutoStream::new(io::stderr().lock(), choice(color));
+    // Nothing sensible is left to do if stderr itself is gone.
+    let _ = stream.write_all(error_text(error).as_bytes());
+}
+
 /// Writes the report to stdout.
 ///
 /// # Errors
@@ -138,6 +155,21 @@ mod tests {
         write_to(&mut buf, &sample(), options).unwrap();
         assert!(!buf.contains(&0x1b));
         assert!(buf.starts_with(b"{"));
+    }
+
+    #[test]
+    fn error_text_names_the_tool_and_the_error() {
+        let t = to_plain(&error_text(&"cannot open /x"));
+        assert_eq!(t, "clocx: error: cannot open /x\n");
+    }
+
+    /// Strips escape codes, as a pipe would.
+    fn to_plain(s: &str) -> String {
+        let mut buf: Vec<u8> = Vec::new();
+        AutoStream::new(&mut buf, ColorChoice::Never)
+            .write_all(s.as_bytes())
+            .unwrap();
+        String::from_utf8(buf).unwrap()
     }
 
     #[test]

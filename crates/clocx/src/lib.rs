@@ -21,7 +21,7 @@ pub mod worktrees;
 use std::process::ExitCode;
 
 use clap::Parser;
-use tracing::{debug, error};
+use tracing::debug;
 
 use cli::Args;
 use engine::Engine;
@@ -58,6 +58,10 @@ fn render_options(args: &Args) -> render::Options {
 /// Returns the first error of computing, writing or (live) drawing the report.
 pub fn run_with(args: &Args) -> Result<(), Error> {
     if args.live {
+        use std::io::IsTerminal;
+        if !std::io::stdout().is_terminal() {
+            return Err(Error::NotATerminal);
+        }
         let engine = Engine::open(args)?;
         return live::run(engine, args, render_options(args));
     }
@@ -79,7 +83,8 @@ pub fn run() -> ExitCode {
         // A closed pipe (clocx | head) is a normal way to stop reading.
         Err(Error::Output(e)) if e.kind() == std::io::ErrorKind::BrokenPipe => ExitCode::SUCCESS,
         Err(e) => {
-            error!("{e}");
+            debug!(error = %e, "run failed");
+            render::emit_error(&e, args.color);
             ExitCode::FAILURE
         }
     }

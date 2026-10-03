@@ -49,7 +49,7 @@ fn missing_root_fails_with_a_message_on_stderr() {
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("cannot open /definitely/not/here"),
+        stderr.contains("clocx: error: cannot open /definitely/not/here"),
         "{stderr}"
     );
 }
@@ -223,4 +223,15 @@ fn worktrees_show_uncommitted_work_and_progress() {
         "{row:?}"
     );
     assert!(line(wt, "* repo").contains("main"), "{wt}");
+}
+
+#[test]
+fn live_without_a_terminal_says_so() {
+    let out = clocx(&["--live", env!("CARGO_MANIFEST_DIR")]);
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("clocx: error: the live view needs a terminal"),
+        "{stderr}"
+    );
 }
