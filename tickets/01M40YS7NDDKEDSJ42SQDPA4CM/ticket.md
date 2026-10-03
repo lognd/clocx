@@ -2,7 +2,8 @@
 id = "01M40YS7NDDKEDSJ42SQDPA4CM"
 title = "Project front page: banner, badges and community files"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
