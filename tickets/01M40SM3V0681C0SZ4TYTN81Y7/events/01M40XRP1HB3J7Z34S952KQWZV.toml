@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:03:00Z"
+digest = "d1f1239ef093a311e9deeeb8cd29ef7892028df0a1423090873a9ce4d1554e66"
+provider = "file"
+ref = "README.md"
+size = 2026
+status = "measured"
+at = "2026-10-03T13:03:00Z"
+actor = "lognd"
+rev = 1
