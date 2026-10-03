@@ -1,0 +1,15 @@
+kind = "create"
+title = "clocx usability polish after 0.1"
+type = "epic"
+category = "todo"
+priority = "medium"
+points = 3
+persona = "clocx owner"
+capability = "a smoother one-shot report"
+outcome_text = "running clocx on a large tree feels responsive"
+scope = ["crates/**", "docs/**"]
+acceptance = ["Given the polish stories under this epic, When they are all done, Then the epic closes"]
+body = "Smaller owner-requested improvements to the one-shot report experience after the 0.1 release."
+at = "2026-10-03T23:40:03Z"
+actor = "lognd"
+rev = 1
