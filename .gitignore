@@ -6,3 +6,4 @@ release_notes-?.??.txt
 .vscode/perl-lang
 .gitmodules
 Unix/cloc_submodule_test
+.frob/
