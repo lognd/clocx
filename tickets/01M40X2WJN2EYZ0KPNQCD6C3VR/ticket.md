@@ -8,12 +8,12 @@ points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:51:05Z"
-updated = "2026-10-03T12:51:16Z"
+updated = "2026-10-03T12:59:51Z"
 scope = ["crates/clocx/**", "docs/**", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
 text = "Given a tree with source files under a hidden directory such as .github, When clocx runs, Then they are counted while .git and gitignored paths stay excluded"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Python file with docstrings, When clocx counts it, Then docstring lines count as comments, as cloc does"
