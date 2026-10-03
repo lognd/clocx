@@ -44,7 +44,8 @@ directory that disappeared shows as an empty row with a negative change.
 
 ### Cache
 
-The cache directory holds, per canonical root, `counts.json` (counts by
+The cache directory holds, per canonical root, `commits.json` (see
+Activity), `counts.json` (counts by
 content key `<xxh3>:<language>`, and a size and mtime stamp per path)
 and `snapshot.json` (the last run's code lines by language and
 directory). A file whose size and mtime match its stamp is not read; a
@@ -53,6 +54,34 @@ pruned to the files seen in each run. A missing or corrupt cache is
 logged and rebuilt, never an error. Like git's index, an edit that keeps
 both size and mtime unchanged is not noticed until the file changes
 again.
+
+## Activity
+
+Recent change activity comes from git history. clocx walks every local
+branch and `HEAD` back 30 days (by committer time), diffs each non-merge
+commit against its first parent, and counts lines added and removed per
+file. Merge commits are skipped, so work merged from a branch is counted
+once. Renames follow the repository's git rename settings. Only source
+files count, by the same rule as the totals (tokei knows the language),
+so lock files and images do not swamp the numbers. When `PATH` is a
+subdirectory, only paths under it count.
+
+The Activity table has one row per window: last 1h, 24h, 7d and 30d,
+with lines added and removed, distinct files touched, commits, and a
+sparkline of lines changed per bucket (5 minutes, 1 hour, 6 hours and 1
+day; oldest left). The note under it gives the number of branch tips
+walked and the time of the newest commit.
+
+"Where work is happening" has one row per directory (at `--depth`) with
+activity in the last 30 days, showing `+added -removed` per window and a
+7-day sparkline. Rows are sorted by the last hour, then the last day,
+7 and 30 days, so current work is on top. Rows with activity in the last
+day are never folded away.
+
+Each commit's per-file result is cached by commit id in `commits.json`
+(commits never change), pruned to the 30-day window. Outside a git
+repository, or when history cannot be read, the section says it is
+unavailable; that is not an error.
 
 ## JSON
 
@@ -66,6 +95,12 @@ followed by a newline. It is never colored, whatever `--color` says.
   folded; each has `name`, `counts` with `files`, `code`, `comments`,
   `blanks`, and `code_delta`), `total`, `baseline_at`, and `cache`
   (`unchanged`, `hash_hits`, `counted`, `unreadable`).
+- `activity`: `{"status": "unavailable", "reason": ...}` or
+  `{"status": "ok", ...}` with `depth`, `windows` (each `label`,
+  `seconds`, `churn` with `added`, `removed`, `files`, `commits`, and
+  `trend`, oldest bucket first), `directories` (each `name`, `windows`
+  as churn in the same order, `trend` over 7 days), `branches` and
+  `last_commit_at`.
 - Values that are unknown are `null`, never absent: `code_delta` and
   `baseline_at` without a previous run.
 
@@ -98,7 +133,9 @@ followed by a newline. It is never colored, whatever `--color` says.
 | `crates/clocx/src/cli.rs` | Command-line arguments (clap). |
 | `crates/clocx/src/model.rs` | The typed report. |
 | `crates/clocx/src/totals.rs` | Walk, count, group and diff the line totals. |
-| `crates/clocx/src/cache.rs` | Count cache and last-run snapshot on disk. |
+| `crates/clocx/src/cache.rs` | Count cache, commit cache and last-run snapshot on disk. |
+| `crates/clocx/src/git.rs` | Open the repository of a root; git error type. |
+| `crates/clocx/src/activity.rs` | Walk recent history and bucket line churn. |
 | `crates/clocx/src/render/` | All output: tables, styles, formatting. |
 | `crates/clocx/src/logging.rs` | `tracing` subscriber setup. |
 | `crates/clocx/src/error.rs` | The run's error type. |

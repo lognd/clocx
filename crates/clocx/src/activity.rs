@@ -3,6 +3,8 @@
 //! Each commit is diffed against its first parent once; the per-file result
 //! is cached by commit id, since commits never change. Merge commits are
 //! skipped so merged work is not counted twice. Times are committer times.
+//! Only source files count (files tokei knows a language for, as in the
+//! totals), so lock files and images do not swamp the numbers.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -187,6 +189,28 @@ pub fn walk(
     Ok((cache.values().cloned().collect(), branches))
 }
 
+/// Whether a repository path is source code by the same rule as the totals (tokei knows its language).
+fn code_path(repo: &Repo, path: &str, config: &tokei::Config) -> bool {
+    tokei::LanguageType::from_path(repo.workdir.join(path), config).is_some()
+}
+
+/// One directory's running totals while bucketing: churn and distinct files per window, and the 7-day trend.
+struct DirAcc<'a> {
+    churn: Vec<Churn>,
+    files: Vec<HashSet<&'a str>>,
+    trend: Vec<u64>,
+}
+
+impl DirAcc<'_> {
+    fn new() -> Self {
+        Self {
+            churn: vec![Churn::default(); WINDOWS.len()],
+            files: vec![HashSet::new(); WINDOWS.len()],
+            trend: vec![0; WINDOWS[DIR_TREND_WINDOW].2],
+        }
+    }
+}
+
 /// Buckets commits into the windows and per-directory rows, keeping only paths under the report root.
 pub fn summarise(
     repo: &Repo,
@@ -206,13 +230,20 @@ pub fn summarise(
         })
         .collect();
     let mut window_files: Vec<HashSet<&str>> = vec![HashSet::new(); WINDOWS.len()];
-    let mut dirs: BTreeMap<String, (Vec<Churn>, Vec<HashSet<&str>>, Vec<u64>)> = BTreeMap::new();
+    let mut dirs: BTreeMap<String, DirAcc> = BTreeMap::new();
     let mut last: Option<i64> = None;
+    let config = tokei::Config::default();
+    let mut is_code: HashMap<&str, bool> = HashMap::new();
 
     for commit in commits {
         let files: Vec<(&str, &FileChurn)> = commit
             .files
             .iter()
+            .filter(|f| {
+                *is_code
+                    .entry(f.path.as_str())
+                    .or_insert_with(|| code_path(repo, &f.path, &config))
+            })
             .filter_map(|f| repo.relative(&f.path).map(|rel| (rel, f)))
             .collect();
         if files.is_empty() {
@@ -237,24 +268,18 @@ pub fn summarise(
                 win.churn.removed += f.removed;
                 window_files[w].insert(rel);
                 let key = dir_key(rel, depth);
-                let entry = dirs.entry(key.clone()).or_insert_with(|| {
-                    (
-                        vec![Churn::default(); WINDOWS.len()],
-                        vec![HashSet::new(); WINDOWS.len()],
-                        vec![0; WINDOWS[DIR_TREND_WINDOW].2],
-                    )
-                });
-                entry.0[w].added += f.added;
-                entry.0[w].removed += f.removed;
-                entry.1[w].insert(rel);
+                let entry = dirs.entry(key.clone()).or_insert_with(DirAcc::new);
+                entry.churn[w].added += f.added;
+                entry.churn[w].removed += f.removed;
+                entry.files[w].insert(rel);
                 if w == DIR_TREND_WINDOW {
-                    entry.2[*buckets - 1 - bucket] += f.added + f.removed;
+                    entry.trend[*buckets - 1 - bucket] += f.added + f.removed;
                 }
                 commit_dirs.insert(key);
             }
             for key in &commit_dirs {
                 if let Some(entry) = dirs.get_mut(key) {
-                    entry.0[w].commits += 1;
+                    entry.churn[w].commits += 1;
                 }
             }
             commit_dirs.clear();
@@ -265,14 +290,14 @@ pub fn summarise(
     }
     let mut directories: Vec<DirActivity> = dirs
         .into_iter()
-        .map(|(name, (mut churn, files, trend))| {
-            for (c, f) in churn.iter_mut().zip(&files) {
+        .map(|(name, mut acc)| {
+            for (c, f) in acc.churn.iter_mut().zip(&acc.files) {
                 c.files = f.len() as u64;
             }
             DirActivity {
                 name,
-                windows: churn,
-                trend,
+                windows: acc.churn,
+                trend: acc.trend,
             }
         })
         .collect();
@@ -432,6 +457,21 @@ mod tests {
         t.merge("feature", NOW - 60);
         let after = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
         assert_eq!(window(&after, "1h").churn, window(&before, "1h").churn);
+    }
+
+    #[test]
+    fn non_code_files_do_not_count() {
+        let t = history();
+        t.write("Cargo.lock", "a\nb\nc\nd\n");
+        t.write("logo.png", "\u{1}\u{2}");
+        t.commit("lock", NOW - 120);
+        let a = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        assert_eq!(
+            window(&a, "1h").churn.commits,
+            1,
+            "a commit of only non-code files is not activity"
+        );
+        assert!(a.directories.iter().all(|d| d.name != "."));
     }
 
     #[test]

@@ -98,6 +98,12 @@ pub mod testrepo {
         dir: tempfile::TempDir,
     }
 
+    impl Default for TestRepo {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl TestRepo {
         /// Initialises an empty repository.
         pub fn new() -> Self {

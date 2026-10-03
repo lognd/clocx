@@ -112,3 +112,75 @@ fn json_flag_prints_one_parseable_document() {
     assert!(text.contains("\"schema_version\": 1"));
     assert!(text.contains("\"languages\""));
 }
+
+/// Runs git in `dir` with an isolated config; panics on failure.
+fn git(dir: &std::path::Path, args: &[&str]) {
+    let out = Command::new("git")
+        .current_dir(dir)
+        .args([
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "commit.gpgsign=false",
+        ])
+        .args(args)
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .output()
+        .expect("git runs");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+// frob:tests crates/clocx/src/activity.rs::collect kind=integration
+#[test]
+fn fresh_commit_shows_in_the_last_hour() {
+    let tree = tempfile::tempdir().unwrap();
+    let root = tree.path();
+    git(root, &["init", "-q", "-b", "main"]);
+    std::fs::create_dir(root.join("src")).unwrap();
+    std::fs::write(root.join("src/a.rs"), "fn a() {}\nfn b() {}\nfn c() {}\n").unwrap();
+    git(root, &["add", "-A"]);
+    git(root, &["commit", "-q", "-m", "first"]);
+
+    let out = clocx(&[root.to_str().unwrap()]);
+    assert!(out.status.success());
+    let text = String::from_utf8(out.stdout).unwrap();
+    let hour = line(&text, "last 1h");
+    assert!(hour.contains("+3"), "{text}");
+    let (_, work) = text
+        .split_once("Where work is happening\n")
+        .expect("directory activity");
+    assert!(line(work, "src").contains("+3"), "{text}");
+    assert!(
+        text.contains("Across 1 branch; last commit just now."),
+        "{text}"
+    );
+
+    let json = String::from_utf8(clocx(&["--json", root.to_str().unwrap()]).stdout).unwrap();
+    assert!(
+        json.contains("\"activity\": {\n    \"status\": \"ok\""),
+        "{json}"
+    );
+}
+
+#[test]
+fn outside_git_activity_is_unavailable_not_an_error() {
+    let tree = tempfile::tempdir().unwrap();
+    std::fs::write(tree.path().join("a.rs"), "fn a() {}\n").unwrap();
+    let out = clocx(&[tree.path().to_str().unwrap()]);
+    assert!(out.status.success());
+    let text = String::from_utf8(out.stdout).unwrap();
+    // A temp dir inside some repository (odd machines) would have activity; only assert the common case.
+    if !text.contains("Where work is happening") && !text.contains("last 1h") {
+        assert!(
+            text.contains("Activity: unavailable (not a git repository)."),
+            "{text}"
+        );
+    }
+}
