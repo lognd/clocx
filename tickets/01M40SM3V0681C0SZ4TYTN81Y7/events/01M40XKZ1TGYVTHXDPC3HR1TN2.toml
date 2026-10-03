@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Owner delegated the parity check (2026-10-03). Checked against Perl cloc --vcs=git on typani, mdcat, lograder and frob; after fixing hidden files and docstrings (~CD6C3VR) code lines agree within a few percent and the rest is documented in docs/clocx.md, Differences from cloc. Parity met; removing the Perl tool, its tests and packaging, and the upstream CI."
+at = "2026-10-03T13:00:25Z"
+actor = "lognd"
+rev = 1
