@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T11:57:13Z"
+digest = "cfe28b6f8346d9b90364d70d669f9e95586f985303e19350220d7a7fda2ef047"
+exit_code = 0
+inline = """
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+"""
+passed = true
+provider = "command"
+ref = "cargo build -p clocx --bin clocx"
+size = 72
+status = "measured"
+at = "2026-10-03T11:57:13Z"
+actor = "lognd"
+rev = 1
