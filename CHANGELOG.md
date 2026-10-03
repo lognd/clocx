@@ -9,6 +9,12 @@ Changes not yet released are kept as one fragment per change in
 [`changelog.d/`](changelog.d/); they are compiled into a section here when a
 version is cut (see [docs/releasing.md](docs/releasing.md)).
 
+## [0.1.1] - 2026-10-03
+
+### Fixed
+
+- Linux release binaries are static musl builds that run on any distribution; the 0.1.0 Linux archives needed glibc 2.39 and failed on older systems such as Ubuntu 22.04.
+
 ## [0.1.0] - 2026-10-03
 
 First release of clocx, a Rust tool that began as a fork of cloc and is now
