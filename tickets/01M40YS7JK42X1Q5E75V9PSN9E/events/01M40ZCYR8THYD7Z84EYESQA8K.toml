@@ -1,23 +1,23 @@
 kind = "evidence"
 accepts = [4]
 captured_at = "2026-10-03T13:31:32Z"
-digest = "d1e3269c997f5276b5cfe27ee4a923b67e3de97e23ab5a4a52dffee7d278f1b5"
+digest = "6dbb00542c4ec2b03b4e6e4d0a67bb4f625db2dd73241149bdea9264dc8d780c"
 exit_code = 0
 inline = """
     Updating crates.io index
-   Packaging clocx v0.1.0 (/home/logan/projects/cloc-wt/V9PSN9E/crates/clocx)
+   Packaging clocx v0.1.0 (cloc-wt/V9PSN9E/crates/clocx)
     Updating crates.io index
     Packaged 30 files, 285.5KiB (76.3KiB compressed)
-   Verifying clocx v0.1.0 (/home/logan/projects/cloc-wt/V9PSN9E/crates/clocx)
-   Compiling clocx v0.1.0 (/home/logan/projects/cloc-wt/V9PSN9E/target/package/clocx-0.1.0)
+   Verifying clocx v0.1.0 (cloc-wt/V9PSN9E/crates/clocx)
+   Compiling clocx v0.1.0 (cloc-wt/V9PSN9E/target/package/clocx-0.1.0)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.90s
-   Uploading clocx v0.1.0 (/home/logan/projects/cloc-wt/V9PSN9E/crates/clocx)
+   Uploading clocx v0.1.0 (cloc-wt/V9PSN9E/crates/clocx)
 warning: aborting upload due to dry run
 """
 passed = true
 provider = "command"
 ref = "cargo publish --dry-run --locked -p clocx --allow-dirty"
-size = 549
+size = 465
 status = "measured"
 at = "2026-10-03T13:31:33Z"
 actor = "lognd"

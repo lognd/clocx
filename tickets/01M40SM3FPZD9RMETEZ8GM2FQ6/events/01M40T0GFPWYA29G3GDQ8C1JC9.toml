@@ -1,16 +1,16 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-03T11:57:22Z"
-digest = "041b8e80578fe460a831255fb59f80e798fcc733ac5f69e249f6a9587d91318b"
+digest = "7b2651cf01b5604c3cc21434e28576d1f5227b1cd18e198dc8c3761231e19d6c"
 exit_code = 0
 inline = """
-    Checking clocx v0.1.0 (/home/logan/projects/cloc-wt/8GM2FQ6/crates/clocx)
+    Checking clocx v0.1.0 (cloc-wt/8GM2FQ6/crates/clocx)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.77s
 """
 passed = true
 provider = "command"
 ref = "cargo clippy -p clocx --all-targets -- -D warnings"
-size = 150
+size = 129
 status = "measured"
 at = "2026-10-03T11:57:22Z"
 actor = "lognd"
