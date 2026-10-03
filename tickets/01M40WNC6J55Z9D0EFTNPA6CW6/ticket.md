@@ -8,7 +8,7 @@ points = 1
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:43:43Z"
-updated = "2026-10-03T12:43:53Z"
+updated = "2026-10-03T12:45:00Z"
 scope = ["crates/clocx/**", "frob.lock"]
 
 [[acceptance]]
