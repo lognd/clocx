@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:37:19Z"
+digest = "705938acdb923ade036ba83342bfb61cb7b356e863623035eb0010655f9126d5"
+provider = "file"
+ref = "SECURITY.md"
+size = 1679
+status = "measured"
+at = "2026-10-03T13:37:19Z"
+actor = "lognd"
+rev = 1
