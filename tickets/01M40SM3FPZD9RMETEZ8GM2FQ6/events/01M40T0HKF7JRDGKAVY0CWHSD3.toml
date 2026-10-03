@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T11:57:23Z"
+digest = "bd16a65ab17c2e25e4b56b1a791265d95d40231c4a7abfd29ce57a8ca3e71788"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+────────────
+ Nextest run ID 98758a80-efc4-4d1c-aecf-796fe8c87bcf with nextest profile: default
+    Starting 5 tests across 4 binaries (13 tests skipped)
+        PASS [   0.024s] (1/5) clocx::cli report_into_a_pipe_is_plain_and_succeeds
+        PASS [   0.025s] (2/5) clocx::cli color_always_forces_escapes_into_a_pipe
+        PASS [   0.026s] (3/5) clocx render::tests::never_strips_and_always_keeps_escapes
+        PASS [   0.026s] (4/5) clocx render::tests::auto_into_a_pipe_strips_escapes
+        PASS [   0.040s] (5/5) clocx render::tests::styled_text_has_escapes
+────────────
+     Summary [   0.041s] 5 tests run: 5 passed, 13 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/render::tests|color|pipe/)"
+size = 762
+status = "measured"
+tests = ["report_into_a_pipe_is_plain_and_succeeds", "color_always_forces_escapes_into_a_pipe", "render::tests::never_strips_and_always_keeps_escapes", "render::tests::auto_into_a_pipe_strips_escapes", "render::tests::styled_text_has_escapes"]
+at = "2026-10-03T11:57:23Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 3
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T11:57:22Z"
+updated = "2026-10-03T11:57:23Z"
 persona = "repository owner"
 capability = "run clocx with a single rendering module that owns all output"
 outcome_text = "output stays consistent and no stray prints creep in"
@@ -24,5 +24,5 @@ bound = true
 
 [[acceptance]]
 text = "Given stdout is not a terminal or NO_COLOR is set, When clocx renders, Then no ANSI escapes are written"
-bound = false
+bound = true
 +++
