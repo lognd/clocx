@@ -6,10 +6,10 @@ use super::table::{Align, Cell, Table};
 use crate::model::{Report, Totals, TotalsRow};
 
 /// Builds the whole text report.
-pub fn report(report: &Report, theme: &Theme) -> String {
+pub fn report(report: &Report, theme: &Theme, rows: usize) -> String {
     let mut out = String::new();
     header(report, theme, &mut out);
-    totals(&report.totals, report, theme, &mut out);
+    totals(&report.totals, report, theme, rows, &mut out);
     out
 }
 
@@ -36,6 +36,37 @@ pub(super) fn delta_cell(delta: Option<i64>, theme: &Theme) -> Cell {
     }
 }
 
+/// Keeps the first `limit` rows plus any later row that changed; the rest fold into one `N more` row.
+fn fold(rows: &[TotalsRow], limit: usize) -> (Vec<&TotalsRow>, Option<TotalsRow>) {
+    if limit == 0 || rows.len() <= limit {
+        return (rows.iter().collect(), None);
+    }
+    let changed = |r: &TotalsRow| r.code_delta.is_some_and(|d| d != 0);
+    let (mut shown, mut folded) = (Vec::new(), Vec::new());
+    for (i, r) in rows.iter().enumerate() {
+        if i < limit || changed(r) {
+            shown.push(r);
+        } else {
+            folded.push(r);
+        }
+    }
+    if folded.is_empty() {
+        return (shown, None);
+    }
+    let mut rest = TotalsRow {
+        name: format!("{} more", folded.len()),
+        counts: Default::default(),
+        code_delta: folded[0].code_delta.map(|_| 0),
+    };
+    for r in folded {
+        rest.counts.files += r.counts.files;
+        rest.counts.code += r.counts.code;
+        rest.counts.comments += r.counts.comments;
+        rest.counts.blanks += r.counts.blanks;
+    }
+    (shown, Some(rest))
+}
+
 /// One totals table (languages or directories) with an optional change column.
 fn totals_table(
     title: String,
@@ -43,6 +74,7 @@ fn totals_table(
     rows: &[TotalsRow],
     total: &TotalsRow,
     with_delta: bool,
+    limit: usize,
     theme: &Theme,
 ) -> Table {
     let mut columns = vec![
@@ -71,15 +103,19 @@ fn totals_table(
         }
         c
     };
-    for r in rows {
+    let (shown, rest) = fold(rows, limit);
+    for r in shown {
         table.row(cells(r, theme.name));
+    }
+    if let Some(rest) = rest {
+        table.row(cells(&rest, theme.dim));
     }
     table.total(cells(total, theme.dim));
     table
 }
 
 /// The languages and directories tables, and a note on what the change column compares with.
-fn totals(totals: &Totals, report: &Report, theme: &Theme, out: &mut String) {
+fn totals(totals: &Totals, report: &Report, theme: &Theme, limit: usize, out: &mut String) {
     let with_delta = totals.baseline_at.is_some();
     out.push('\n');
     if totals.languages.is_empty() {
@@ -92,6 +128,7 @@ fn totals(totals: &Totals, report: &Report, theme: &Theme, out: &mut String) {
         &totals.languages,
         &totals.total,
         with_delta,
+        limit,
         theme,
     )
     .render(theme, out);
@@ -107,6 +144,7 @@ fn totals(totals: &Totals, report: &Report, theme: &Theme, out: &mut String) {
         &totals.directories,
         &totals.total,
         with_delta,
+        limit,
         theme,
     )
     .render(theme, out);
@@ -137,7 +175,7 @@ mod tests {
             spark: p,
             warn: p,
         };
-        super::report(report, &theme)
+        super::report(report, &theme, 0)
     }
 
     #[test]
@@ -177,6 +215,37 @@ mod tests {
         let mut r = sample::report();
         r.totals.languages.clear();
         assert!(plain(&r).contains("No source files found."));
+    }
+
+    #[test]
+    fn long_tables_fold_but_keep_changed_rows() {
+        let row = |name: &str, code, delta| TotalsRow {
+            name: name.into(),
+            counts: crate::model::LineCounts {
+                files: 1,
+                code,
+                comments: 0,
+                blanks: 0,
+            },
+            code_delta: Some(delta),
+        };
+        let rows = vec![
+            row("a", 40, 0),
+            row("b", 30, 0),
+            row("c", 20, 5),
+            row("d", 10, 0),
+            row("e", 5, 0),
+        ];
+        let (shown, rest) = fold(&rows, 1);
+        let names: Vec<&str> = shown.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, ["a", "c"]);
+        let rest = rest.unwrap();
+        assert_eq!(
+            (rest.name.as_str(), rest.counts.files, rest.counts.code),
+            ("3 more", 3, 45)
+        );
+        assert_eq!(fold(&rows, 0).0.len(), 5);
+        assert!(fold(&rows, 9).1.is_none());
     }
 
     #[test]

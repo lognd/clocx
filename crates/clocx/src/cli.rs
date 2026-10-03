@@ -28,6 +28,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..))]
     pub depth: u16,
 
+    /// Most rows per text table; the rest fold into one line (0 shows every row).
+    #[arg(long, default_value_t = crate::render::DEFAULT_ROWS, value_name = "N")]
+    pub rows: usize,
+
     /// When to color the output.
     #[arg(long, value_enum, default_value_t = ColorWhen::Auto, value_name = "WHEN")]
     pub color: ColorWhen,

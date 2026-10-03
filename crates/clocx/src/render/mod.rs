@@ -26,7 +26,21 @@ use style::Theme;
 pub struct Options {
     /// The user's color preference; `Auto` defers to the terminal and `NO_COLOR`.
     pub color: ColorWhen,
+    /// Most rows per text table before the rest fold into one line; 0 shows all.
+    pub rows: usize,
 }
+
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            color: ColorWhen::Auto,
+            rows: DEFAULT_ROWS,
+        }
+    }
+}
+
+/// Rows per text table unless `--rows` says otherwise.
+pub const DEFAULT_ROWS: usize = 12;
 
 /// Maps the CLI color flag onto anstream's choice.
 fn choice(color: ColorWhen) -> ColorChoice {
@@ -38,8 +52,8 @@ fn choice(color: ColorWhen) -> ColorChoice {
 }
 
 /// Renders the report as styled text, escapes included.
-pub fn to_text(report: &Report) -> String {
-    text::report(report, &Theme::default())
+pub fn to_text(report: &Report, options: Options) -> String {
+    text::report(report, &Theme::default(), options.rows)
 }
 
 /// Writes the report to `sink`, stripping escapes as the color choice demands.
@@ -52,7 +66,7 @@ pub fn write_to<W: anstream::stream::RawStream + anstream::stream::AsLockedWrite
     options: Options,
 ) -> io::Result<()> {
     let mut stream = AutoStream::new(sink, choice(options.color));
-    stream.write_all(to_text(report).as_bytes())?;
+    stream.write_all(to_text(report, options).as_bytes())?;
     stream.flush()
 }
 
@@ -73,7 +87,7 @@ mod tests {
 
     #[test]
     fn styled_text_has_escapes() {
-        assert!(to_text(&sample()).contains('\u{1b}'));
+        assert!(to_text(&sample(), Options::default()).contains('\u{1b}'));
     }
 
     #[test]
@@ -84,6 +98,7 @@ mod tests {
             &sample(),
             Options {
                 color: ColorWhen::Auto,
+                ..Options::default()
             },
         )
         .unwrap();
@@ -100,6 +115,7 @@ mod tests {
             &sample(),
             Options {
                 color: ColorWhen::Never,
+                ..Options::default()
             },
         )
         .unwrap();
@@ -110,6 +126,7 @@ mod tests {
             &sample(),
             Options {
                 color: ColorWhen::Always,
+                ..Options::default()
             },
         )
         .unwrap();

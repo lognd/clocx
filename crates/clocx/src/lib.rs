@@ -62,7 +62,14 @@ pub fn build_report(args: &Args) -> Result<Report, Error> {
 pub fn run_with(args: &Args) -> Result<(), Error> {
     let report = build_report(args)?;
     debug!("rendering text report");
-    render::emit(&report, render::Options { color: args.color }).map_err(Error::Output)
+    render::emit(
+        &report,
+        render::Options {
+            color: args.color,
+            rows: args.rows,
+        },
+    )
+    .map_err(Error::Output)
 }
 
 /// Parses the command line, runs, and maps the outcome to an exit code.
