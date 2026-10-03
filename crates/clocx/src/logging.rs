@@ -13,13 +13,16 @@ fn default_directive(verbose: u8) -> &'static str {
 }
 
 /// Installs the global subscriber writing to stderr; `RUST_LOG` wins over `-v`.
+///
+/// Events go through the progress readout's writer, which erases the
+/// progress line first so a log line never lands in the middle of it.
 pub fn init(verbose: u8) {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new(default_directive(verbose)));
     // A second install (tests calling run twice) is harmless; keep the first.
     let _ = tracing_subscriber::fmt()
         .with_env_filter(filter)
-        .with_writer(std::io::stderr)
+        .with_writer(crate::render::progress::LogWriter::default)
         .with_target(false)
         .without_time()
         .try_init();

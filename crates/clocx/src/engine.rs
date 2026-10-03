@@ -7,6 +7,7 @@
 //! refresh.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use jiff::Timestamp;
 use tracing::{debug, info, warn};
@@ -17,6 +18,7 @@ use crate::cli::Args;
 use crate::error::Error;
 use crate::git::{GitError, Repo};
 use crate::model::{Activity, Report, Section, Worktrees};
+use crate::progress::{Phase, Progress};
 use crate::{totals, worktrees};
 
 /// Computes reports for one root, keeping per-file and per-commit caches warm.
@@ -29,6 +31,7 @@ pub struct Engine {
     commits: CommitCache,
     baseline: Option<Snapshot>,
     latest: Option<Snapshot>,
+    progress: Arc<Progress>,
 }
 
 impl Engine {
@@ -54,6 +57,7 @@ impl Engine {
             commits: store.load_commits(),
             baseline: store.load_snapshot(),
             latest: None,
+            progress: Arc::default(),
             store,
             root,
         })
@@ -62,6 +66,11 @@ impl Engine {
     /// The canonical root this engine reports on.
     pub fn root(&self) -> &std::path::Path {
         &self.root
+    }
+
+    /// The progress counters refreshes and [`Engine::persist`] advance, for a readout to poll.
+    pub fn progress(&self) -> Arc<Progress> {
+        Arc::clone(&self.progress)
     }
 
     /// Computes a fresh report; files and commits unchanged since the last refresh come from the caches.
@@ -73,11 +82,13 @@ impl Engine {
             &mut self.counts,
             self.baseline.as_ref(),
             now,
+            &self.progress,
         );
         self.latest = Some(scan.snapshot);
         let repo = Repo::discover(&self.root);
         let activity = self.activity_section(&repo, now);
-        let worktrees = worktrees_section(&repo, &self.root, self.base.as_deref());
+        let worktrees = worktrees_section(&repo, &self.root, self.base.as_deref(), &self.progress);
+        self.progress.begin(Phase::Done, None);
         debug!("report refreshed");
         Report {
             root: self.root.display().to_string(),
@@ -90,6 +101,7 @@ impl Engine {
 
     /// Writes the caches and the latest snapshot (the next run's baseline); failures are logged, never fatal.
     pub fn persist(&self) {
+        self.progress.begin(Phase::Saving, None);
         if let Err(e) = self.store.save_counts(&self.counts) {
             warn!(error = %e, "count cache not saved");
         }
@@ -101,6 +113,7 @@ impl Engine {
         {
             warn!(error = %e, "snapshot not saved; the next run shows no change column");
         }
+        self.progress.begin(Phase::Done, None);
     }
 
     /// The git activity section; outside a repository or on a git error it is unavailable, not fatal.
@@ -118,7 +131,7 @@ impl Engine {
                 };
             }
         };
-        match activity::collect(repo, self.depth, now, &mut self.commits) {
+        match activity::collect(repo, self.depth, now, &mut self.commits, &self.progress) {
             Ok(a) => Section::Ok(a),
             Err(e) => {
                 warn!(error = %e, "git history could not be read");
@@ -135,6 +148,7 @@ fn worktrees_section(
     repo: &Result<Repo, GitError>,
     root: &std::path::Path,
     base: Option<&str>,
+    progress: &Progress,
 ) -> Section<Worktrees> {
     let repo = match repo {
         Ok(r) => r,
@@ -144,7 +158,7 @@ fn worktrees_section(
             };
         }
     };
-    match worktrees::collect(repo, root, base) {
+    match worktrees::collect(repo, root, base, progress) {
         Ok(w) => Section::Ok(w),
         Err(e) => {
             warn!(error = %e, "worktrees could not be read");

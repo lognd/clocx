@@ -84,6 +84,7 @@ cheap to leave open on a second screen. `q` quits, `r` refreshes.
 | `--base BRANCH` | What worktrees compare with (default `main`, else `master`). |
 | `--color WHEN` | `auto`, `always` or `never`. |
 | `--cache-dir DIR`, `--no-cache` | Where counts are cached, or no cache at all. |
+| `--no-progress` | No progress line on stderr while the report is computed. |
 | `-v` | Diagnostics on stderr (`-vv` debug); `RUST_LOG` also works. |
 
 The full reference, with the JSON shape and the exact rules for each

@@ -44,6 +44,10 @@ pub struct Args {
     #[arg(short, long)]
     pub live: bool,
 
+    /// Do not draw the progress line on stderr while the report is computed.
+    #[arg(long)]
+    pub no_progress: bool,
+
     /// When to color the output.
     #[arg(long, value_enum, default_value_t = ColorWhen::Auto, value_name = "WHEN")]
     pub color: ColorWhen,

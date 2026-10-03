@@ -13,6 +13,7 @@ use tracing::{debug, info, warn};
 
 use crate::cache::{Counted, Counts, Snapshot, Stamp};
 use crate::model::{CacheUse, LineCounts, Totals, TotalsRow};
+use crate::progress::{Phase, Progress};
 
 /// A file the walk found, with its path relative to the root (forward slashes).
 struct Found {
@@ -88,7 +89,8 @@ fn one_line_docstrings(bytes: &[u8]) -> u64 {
 }
 
 /// Lists files under `root`, honouring .gitignore and .ignore; hidden files count (like `.github/`), `.git` never.
-fn walk(root: &Path) -> Vec<Found> {
+fn walk(root: &Path, progress: &Progress) -> Vec<Found> {
+    progress.begin(Phase::Walking, None);
     let mut found = Vec::new();
     for entry in WalkBuilder::new(root)
         .hidden(false)
@@ -117,6 +119,7 @@ fn walk(root: &Path) -> Vec<Found> {
             .collect::<Vec<_>>()
             .join("/");
         found.push(Found { rel, abs });
+        progress.tick();
     }
     found
 }
@@ -240,20 +243,28 @@ fn rows(
 }
 
 /// Scans `root`, updating `cache` in place (pruned to the files seen) and diffing against `baseline`.
+///
+/// `progress` advances once per file found, then once per file counted.
 pub fn scan(
     root: &Path,
     depth: u16,
     cache: &mut Counts,
     baseline: Option<&Snapshot>,
     now: Timestamp,
+    progress: &Progress,
 ) -> Scan {
     let config = tokei_config();
-    let found = walk(root);
+    let found = walk(root, progress);
     debug!(files = found.len(), "walked tree");
 
+    progress.begin(Phase::Counting, Some(found.len() as u64));
     let results: Vec<Result<FileResult, Unreadable>> = found
         .par_iter()
-        .filter_map(|f| count_file(f, &config, cache))
+        .filter_map(|f| {
+            let result = count_file(f, &config, cache);
+            progress.tick();
+            result
+        })
         .collect();
 
     let mut usage = CacheUse::default();
@@ -379,6 +390,7 @@ mod tests {
             &mut Counts::default(),
             None,
             Timestamp::now(),
+            &Progress::default(),
         );
         let c = scan.totals.total.counts;
         assert_eq!((c.code, c.comments, c.blanks), (3, 2, 1));
@@ -397,7 +409,14 @@ mod tests {
     fn counts_by_language_and_directory() {
         let tmp = fixture();
         let mut cache = Counts::default();
-        let scan = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let scan = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         let t = &scan.totals;
 
         let rust = row(&t.languages, "Rust");
@@ -454,7 +473,14 @@ mod tests {
     fn deltas_compare_with_the_previous_snapshot() {
         let tmp = fixture();
         let mut cache = Counts::default();
-        let first = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let first = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
 
         write(tmp.path(), "src/new.rs", "fn a() {}\nfn b() {}\n");
         fs::remove_file(tmp.path().join("scripts/run.py")).unwrap();
@@ -465,6 +491,7 @@ mod tests {
             &mut cache,
             Some(&first.snapshot),
             Timestamp::now(),
+            &Progress::default(),
         );
         let t = &second.totals;
 
@@ -482,13 +509,21 @@ mod tests {
     fn directory_deltas_need_the_same_depth() {
         let tmp = fixture();
         let mut cache = Counts::default();
-        let first = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let first = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         let second = scan(
             tmp.path(),
             2,
             &mut cache,
             Some(&first.snapshot),
             Timestamp::now(),
+            &Progress::default(),
         );
         assert!(
             second
@@ -504,11 +539,25 @@ mod tests {
     fn unchanged_files_come_from_the_cache() {
         let tmp = fixture();
         let mut cache = Counts::default();
-        let first = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let first = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         let n = first.totals.total.counts.files;
         assert_eq!(first.totals.cache.counted, n);
 
-        let second = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let second = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         assert_eq!(
             second.totals.cache,
             CacheUse {
@@ -519,7 +568,14 @@ mod tests {
 
         // Same content at a new path is a hash hit, not a recount.
         write(tmp.path(), "src/copy.rs", "fn util() {}\n");
-        let third = scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        let third = scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         assert_eq!(third.totals.cache.hash_hits, 1);
         assert_eq!(third.totals.cache.counted, 0);
         assert_eq!(third.totals.total.counts.files, n + 1);
@@ -529,9 +585,23 @@ mod tests {
     fn cache_is_pruned_to_files_seen() {
         let tmp = fixture();
         let mut cache = Counts::default();
-        scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         fs::remove_file(tmp.path().join("src/main.rs")).unwrap();
-        scan(tmp.path(), 1, &mut cache, None, Timestamp::now());
+        scan(
+            tmp.path(),
+            1,
+            &mut cache,
+            None,
+            Timestamp::now(),
+            &Progress::default(),
+        );
         assert!(!cache.by_path.contains_key("src/main.rs"));
         assert_eq!(cache.by_path.len(), cache.by_key.len());
     }

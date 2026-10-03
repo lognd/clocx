@@ -18,6 +18,7 @@ use tracing::{debug, info, warn};
 
 use crate::git::{GitError, Repo, line_churn, read_err};
 use crate::model::{Churn, WorktreeStatus, Worktrees};
+use crate::progress::{Phase, Progress};
 
 /// Branch names tried, in order, when no base is given.
 const DEFAULT_BASES: [&str; 2] = ["main", "master"];
@@ -257,11 +258,17 @@ fn fill(
 /// Collects the status of every worktree of the repository `repo` belongs to.
 ///
 /// `root` (canonical) marks the worktree the report is about as current;
-/// `base` overrides the base branch (default `main`, else `master`).
+/// `base` overrides the base branch (default `main`, else `master`);
+/// `progress` advances once per worktree read.
 ///
 /// # Errors
 /// Returns [`GitError::Read`] when the worktree list cannot be read; a single unreadable worktree is reported in its row instead.
-pub fn collect(repo: &Repo, root: &Path, base: Option<&str>) -> Result<Worktrees, GitError> {
+pub fn collect(
+    repo: &Repo,
+    root: &Path,
+    base: Option<&str>,
+    progress: &Progress,
+) -> Result<Worktrees, GitError> {
     let main = repo
         .repo
         .main_repo()
@@ -269,8 +276,15 @@ pub fn collect(repo: &Repo, root: &Path, base: Option<&str>) -> Result<Worktrees
     let base = resolve_base(&main, base);
     let paths = worktree_paths(&main)?;
     let base_id = base.as_ref().map(|(_, id)| *id);
-    let mut worktrees: Vec<WorktreeStatus> =
-        paths.par_iter().map(|p| status_of(p, base_id)).collect();
+    progress.begin(Phase::Worktrees, Some(paths.len() as u64));
+    let mut worktrees: Vec<WorktreeStatus> = paths
+        .par_iter()
+        .map(|p| {
+            let status = status_of(p, base_id);
+            progress.tick();
+            status
+        })
+        .collect();
 
     // The deepest worktree containing the root is the current one (worktrees can nest).
     let canonical = |p: &str| {
@@ -334,7 +348,7 @@ mod tests {
     #[test]
     fn every_worktree_is_listed_with_its_branch() {
         let (t, _wts) = setup();
-        let w = collect(&t.open(), &t.path(), None).unwrap();
+        let w = collect(&t.open(), &t.path(), None, &Progress::default()).unwrap();
         assert_eq!(w.base.as_deref(), Some("main"));
         assert_eq!(w.worktrees.len(), 2);
         let main = find(&w, t.path().file_name().unwrap().to_str().unwrap());
@@ -357,7 +371,7 @@ mod tests {
         fs::write(feat.join(".gitignore"), "target/\n").unwrap();
         fs::create_dir(feat.join("target")).unwrap();
         fs::write(feat.join("target/junk.rs"), "ignored\n").unwrap();
-        let w = collect(&t.open(), &t.path(), None).unwrap();
+        let w = collect(&t.open(), &t.path(), None, &Progress::default()).unwrap();
         let s = find(&w, "feat");
         assert_eq!(
             s.uncommitted,
@@ -379,7 +393,7 @@ mod tests {
         let (t, wts) = setup();
         let feat = wts.path().join("feat");
         fs::write(feat.join("src/a.rs"), "1\r\n2\r\n3\r\n").unwrap();
-        let w = collect(&t.open(), &t.path(), None).unwrap();
+        let w = collect(&t.open(), &t.path(), None, &Progress::default()).unwrap();
         assert_eq!(find(&w, "feat").uncommitted, Churn::default());
     }
 
@@ -395,7 +409,7 @@ mod tests {
         t.write("src/main_only.rs", "m\n");
         t.commit("main moves", T0 + 120);
 
-        let w = collect(&t.open(), &t.path(), None).unwrap();
+        let w = collect(&t.open(), &t.path(), None, &Progress::default()).unwrap();
         let s = find(&w, "feat");
         assert_eq!(s.ahead, Some(1));
         assert_eq!(
@@ -423,9 +437,9 @@ mod tests {
     #[test]
     fn explicit_and_missing_bases() {
         let (t, _wts) = setup();
-        let w = collect(&t.open(), &t.path(), Some("feature")).unwrap();
+        let w = collect(&t.open(), &t.path(), Some("feature"), &Progress::default()).unwrap();
         assert_eq!(w.base.as_deref(), Some("feature"));
-        let w = collect(&t.open(), &t.path(), Some("nope")).unwrap();
+        let w = collect(&t.open(), &t.path(), Some("nope"), &Progress::default()).unwrap();
         assert_eq!(w.base, None);
         assert!(
             w.worktrees
@@ -439,7 +453,7 @@ mod tests {
         let (_t, wts) = setup();
         let feat = wts.path().join("feat").canonicalize().unwrap();
         let repo = Repo::discover(&feat).unwrap();
-        let w = collect(&repo, &feat, None).unwrap();
+        let w = collect(&repo, &feat, None, &Progress::default()).unwrap();
         assert_eq!(w.worktrees.len(), 2);
         assert!(find(&w, "feat").current);
         assert_eq!(w.worktrees.iter().filter(|s| s.current).count(), 1);
@@ -449,7 +463,7 @@ mod tests {
     fn a_removed_worktree_directory_is_a_problem_not_an_error() {
         let (t, wts) = setup();
         fs::remove_dir_all(wts.path().join("feat")).unwrap();
-        let w = collect(&t.open(), &t.path(), None).unwrap();
+        let w = collect(&t.open(), &t.path(), None, &Progress::default()).unwrap();
         let s = find(&w, "feat");
         assert_eq!(s.problem.as_deref(), Some("worktree directory is missing"));
         assert_eq!(

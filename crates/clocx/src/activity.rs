@@ -17,6 +17,7 @@ use tracing::{debug, info, warn};
 
 use crate::git::{GitError, Repo, read_err};
 use crate::model::{Activity, ActivityWindow, Churn, DirActivity};
+use crate::progress::{Phase, Progress};
 use crate::totals::dir_key;
 
 /// The windows shown: label, length in seconds, sparkline buckets.
@@ -127,6 +128,7 @@ fn diff_commit(
 /// Walks the last 30 days of history and returns each non-merge commit's churn, using and refilling `cache`.
 ///
 /// The cache is pruned to the commits seen, so it stays bounded by the window.
+/// `progress` advances once per commit read; the total is not known up front.
 ///
 /// # Errors
 /// Returns [`GitError::Read`] when references, commits or trees cannot be read.
@@ -134,7 +136,9 @@ pub fn walk(
     repo: &gix::Repository,
     now: Timestamp,
     cache: &mut CommitCache,
+    progress: &Progress,
 ) -> Result<(Vec<CommitChurn>, u64), GitError> {
+    progress.begin(Phase::History, None);
     let tips = tips(repo)?;
     let branches = tips.len() as u64;
     if tips.is_empty() {
@@ -159,6 +163,7 @@ pub fn walk(
     let (mut hits, mut diffed) = (0u64, 0u64);
     for info in walk {
         let info = info.map_err(read_err("walking history"))?;
+        progress.tick();
         if info.parent_ids.len() > 1 {
             continue;
         }
@@ -324,8 +329,9 @@ pub fn collect(
     depth: u16,
     now: Timestamp,
     cache: &mut CommitCache,
+    progress: &Progress,
 ) -> Result<Activity, GitError> {
-    let (commits, branches) = walk(&repo.repo, now, cache)?;
+    let (commits, branches) = walk(&repo.repo, now, cache, progress)?;
     Ok(summarise(repo, &commits, depth, now, branches))
 }
 
@@ -368,7 +374,14 @@ mod tests {
     fn windows_count_lines_files_and_commits() {
         let t = history();
         let repo = t.open();
-        let a = collect(&repo, 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &repo,
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
 
         let hour = window(&a, "1h");
         assert_eq!(
@@ -406,7 +419,14 @@ mod tests {
     #[test]
     fn directories_are_ranked_by_recent_work() {
         let t = history();
-        let a = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert_eq!(a.directories[0].name, "src");
         let src = dir(&a, "src");
         assert_eq!(
@@ -428,7 +448,14 @@ mod tests {
     #[test]
     fn trends_put_recent_changes_in_the_last_bucket() {
         let t = history();
-        let a = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         let day = window(&a, "24h");
         assert_eq!(day.trend.len(), 24);
         assert_eq!(*day.trend.last().unwrap(), 3);
@@ -446,7 +473,14 @@ mod tests {
         t.write("feat/f.rs", "a\nb\n");
         t.commit("feature work", NOW - 300);
         t.git(&["checkout", "-q", "main"]);
-        let before = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let before = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert_eq!(
             window(&before, "1h").churn.commits,
             2,
@@ -455,7 +489,14 @@ mod tests {
         assert_eq!(before.branches, 2);
 
         t.merge("feature", NOW - 60);
-        let after = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let after = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert_eq!(window(&after, "1h").churn, window(&before, "1h").churn);
     }
 
@@ -465,7 +506,14 @@ mod tests {
         t.write("Cargo.lock", "a\nb\nc\nd\n");
         t.write("logo.png", "\u{1}\u{2}");
         t.commit("lock", NOW - 120);
-        let a = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert_eq!(
             window(&a, "1h").churn.commits,
             1,
@@ -479,10 +527,10 @@ mod tests {
         let t = history();
         let repo = t.open();
         let mut cache = CommitCache::new();
-        collect(&repo, 1, now(), &mut cache).unwrap();
+        collect(&repo, 1, now(), &mut cache, &Progress::default()).unwrap();
         assert_eq!(cache.len(), 2, "only commits inside 30 days are kept");
         let first = cache.clone();
-        let again = collect(&repo, 1, now(), &mut cache).unwrap();
+        let again = collect(&repo, 1, now(), &mut cache, &Progress::default()).unwrap();
         assert_eq!(cache, first);
         assert_eq!(window(&again, "7d").churn.added, 5);
     }
@@ -491,7 +539,14 @@ mod tests {
     fn a_subdirectory_root_sees_only_its_paths() {
         let t = history();
         let sub = t.open_at("src");
-        let a = collect(&sub, 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &sub,
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert_eq!(window(&a, "7d").churn.files, 1);
         assert_eq!(a.directories.len(), 1);
         assert_eq!(a.directories[0].name, ".");
@@ -500,7 +555,14 @@ mod tests {
     #[test]
     fn empty_repository_has_no_activity() {
         let t = TestRepo::new();
-        let a = collect(&t.open(), 1, now(), &mut CommitCache::new()).unwrap();
+        let a = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
         assert!(a.directories.is_empty());
         assert_eq!(a.windows.len(), 4);
         assert_eq!(a.last_commit_at, None);

@@ -10,7 +10,8 @@ The Perl cloc was removed once clocx reached parity for the owner's use
 ## Usage
 
     clocx [PATH] [--live] [--depth N] [--rows N] [--color auto|always|never]
-          [--base BRANCH] [--cache-dir DIR] [--no-cache] [--json] [-v...]
+          [--base BRANCH] [--cache-dir DIR] [--no-cache] [--no-progress]
+          [--json] [-v...]
 
 By default clocx prints the report once and exits. `--live` (`-l`)
 keeps it open as a dashboard instead.
@@ -23,10 +24,38 @@ keeps it open as a dashboard instead.
 | `--rows N` | Most rows per text table; the rest fold into one dimmed `N more` row. Rows whose code changed are always shown. Default 12; `0` shows all. |
 | `--cache-dir DIR` | Where the count cache and last-run snapshot live; default `<user cache dir>/clocx`. Also `CLOCX_CACHE_DIR`. |
 | `--no-cache` | Read and write no cache or snapshot; the change column is never shown. |
+| `--no-progress` | Draw no progress line on stderr while the report is computed (see Progress). |
 | `-l, --live` | Full-screen dashboard that refreshes on changes (see Live view). Needs a terminal; not with `--json`. |
 | `--json` | Print the report as one JSON document instead of tables (see JSON below). |
 | `--color WHEN` | `auto` (default) colors only when stdout is a terminal and `NO_COLOR` is unset. |
 | `-v` | More diagnostics on stderr (`-v` info, `-vv` debug, `-vvv` trace). `RUST_LOG` overrides. |
+
+## Progress
+
+While a one-shot report (text or `--json`) is computed, clocx draws one
+line on stderr that overwrites itself in place, so a large tree never
+leaves a blank screen (shown in ASCII; the terminal gets a braille
+spinner and block characters):
+
+    * Counting  ######------------------ 1,024/4,003 files   25%  812/s  ETA 4s
+
+It names the phase (`Finding` files, `Counting` them, reading git
+`History`, reading `Worktrees`, `Saving` the cache). When the phase
+knows its total it shows a bar, done/total, percent, rate and an ETA
+from the rate so far; otherwise a running count and rate. Rates under
+one item a second are left out. On a narrow terminal the bar goes
+first, then the rate and ETA. The line is erased before the report is
+written.
+
+There is no line when stderr is not a terminal, when `TERM=dumb`, with
+`--no-progress`, in the live view, or when the run finishes within
+250 ms (a warm cache), so it never flickers. Colors follow `--color`
+and `NO_COLOR` for stderr. Diagnostics logged while the line shows
+erase it first; it is drawn again on the next tick (every 80 ms).
+
+Compute code only advances shared counters (`crates/clocx/src/progress.rs`);
+the renderer (`crates/clocx/src/render/progress.rs`) samples and draws
+them from its own thread, so counting is not slowed by drawing.
 
 ## Totals
 
@@ -196,6 +225,7 @@ followed by a newline. It is never colored, whatever `--color` says.
 - Control characters in names (odd file names) are shown as `?` in
   tables, so a file name cannot inject terminal escapes; JSON escapes
   them.
+- The progress line (see Progress) is the only other thing on stderr.
 - Diagnostics go through `tracing` to stderr (to `live.log` in the live
   view), never to stdout. A failed run ends with one line on stderr,
   `clocx: error: ...`, and exit status 1.
@@ -206,6 +236,7 @@ followed by a newline. It is never colored, whatever `--color` says.
 | --- | --- |
 | `crates/clocx/src/main.rs` | Entry point; calls `clocx::run`. |
 | `crates/clocx/src/engine.rs` | Owns the caches of one root; computes a report per refresh. |
+| `crates/clocx/src/progress.rs` | Phase and counters a refresh advances, for the progress line. |
 | `crates/clocx/src/live.rs` | Live view event loop: watcher, keys, background refresh. |
 | `crates/clocx/src/cli.rs` | Command-line arguments (clap). |
 | `crates/clocx/src/model.rs` | The typed report. |
@@ -214,7 +245,7 @@ followed by a newline. It is never colored, whatever `--color` says.
 | `crates/clocx/src/git.rs` | Open the repository of a root; git error type. |
 | `crates/clocx/src/activity.rs` | Walk recent history and bucket line churn. |
 | `crates/clocx/src/worktrees.rs` | Status of every worktree against HEAD and the base. |
-| `crates/clocx/src/render/` | All output: `sections` builds the tables once; `text`, `json` and `live` (ratatui) draw them; `style` is the one palette. |
+| `crates/clocx/src/render/` | All output: `sections` builds the tables once; `text`, `json` and `live` (ratatui) draw them; `progress` draws the progress line; `style` is the one palette. |
 | `crates/clocx/src/logging.rs` | `tracing` subscriber setup. |
 | `crates/clocx/src/error.rs` | The run's error type. |
 

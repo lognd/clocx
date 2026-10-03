@@ -13,6 +13,7 @@ pub mod git;
 pub mod live;
 pub mod logging;
 pub mod model;
+pub mod progress;
 pub mod render;
 pub mod totals;
 pub mod worktrees;
@@ -29,10 +30,19 @@ use model::Report;
 
 /// Computes one report for the parsed arguments and saves the caches and baseline.
 ///
+/// Unless `--no-progress` is given, a progress line is drawn on stderr (when
+/// it is a terminal) while this runs, and erased before it returns.
+///
 /// # Errors
 /// Returns [`Error::Root`] when the root path cannot be resolved.
 pub fn build_report(args: &Args) -> Result<Report, Error> {
     let mut engine = Engine::open(args)?;
+    // Dropped (and erased) before the caller writes the report.
+    let _readout = if args.no_progress {
+        None
+    } else {
+        render::progress::start(engine.progress(), args.color)
+    };
     let report = engine.refresh();
     engine.persist();
     Ok(report)

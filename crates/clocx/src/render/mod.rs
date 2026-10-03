@@ -9,6 +9,7 @@
 pub mod format;
 mod json;
 pub mod live;
+pub mod progress;
 #[cfg(test)]
 pub(crate) mod sample;
 pub mod sections;

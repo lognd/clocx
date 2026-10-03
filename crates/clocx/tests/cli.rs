@@ -32,6 +32,20 @@ fn report_into_a_pipe_is_plain_and_succeeds() {
     );
 }
 
+// frob:tests crates/clocx/src/render/progress.rs::start kind=integration
+#[test]
+fn no_progress_line_when_stderr_is_not_a_terminal() {
+    for args in [
+        vec![env!("CARGO_MANIFEST_DIR")],
+        vec!["--color", "always", env!("CARGO_MANIFEST_DIR")],
+        vec!["--no-progress", env!("CARGO_MANIFEST_DIR")],
+    ] {
+        let out = clocx(&args);
+        assert!(out.status.success(), "{out:?}");
+        assert!(out.stderr.is_empty(), "{args:?}: {out:?}");
+    }
+}
+
 // frob:tests crates/clocx/src/render/mod.rs::emit kind=integration
 #[test]
 fn color_always_forces_escapes_into_a_pipe() {

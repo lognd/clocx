@@ -68,6 +68,17 @@ pub fn age(then: Timestamp, now: Timestamp) -> String {
     }
 }
 
+/// Formats a short duration for an ETA: "<1s", "42s", "3m05s", "1h02m".
+pub fn duration(d: std::time::Duration) -> String {
+    let secs = d.as_secs();
+    match secs {
+        0 => "<1s".to_owned(),
+        1..60 => format!("{secs}s"),
+        60..3_600 => format!("{}m{:02}s", secs / 60, secs % 60),
+        _ => format!("{}h{:02}m", secs / 3_600, secs % 3_600 / 60),
+    }
+}
+
 /// Draws values as a block sparkline scaled to the maximum; zero is the lowest bar, any non-zero value is visibly higher.
 pub fn sparkline(values: &[u64]) -> String {
     let max = values.iter().copied().max().unwrap_or(0);
@@ -118,6 +129,15 @@ mod tests {
         assert_eq!(ago(3 * 3_600), "3h ago");
         assert_eq!(ago(2 * 86_400), "2d ago");
         assert_eq!(ago(-50), "just now");
+    }
+
+    #[test]
+    fn durations_use_two_units_at_most() {
+        let d = |s: u64| duration(std::time::Duration::from_secs(s));
+        assert_eq!(duration(std::time::Duration::from_millis(400)), "<1s");
+        assert_eq!(d(42), "42s");
+        assert_eq!(d(185), "3m05s");
+        assert_eq!(d(3_720), "1h02m");
     }
 
     #[test]
