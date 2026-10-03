@@ -8,7 +8,7 @@ points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T12:51:05Z"
-updated = "2026-10-03T12:59:51Z"
+updated = "2026-10-03T12:59:52Z"
 scope = ["crates/clocx/**", "docs/**", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Python file with docstrings, When clocx counts it, Then docstring lines count as comments, as cloc does"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a count cache written by an earlier version, When clocx runs, Then the stale cache is discarded and files are recounted"
