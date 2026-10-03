@@ -69,6 +69,24 @@ pub fn tokei_config() -> Config {
     }
 }
 
+/// Lines that are nothing but a complete triple-quoted string (`"""Doc."""`), the one-line docstrings tokei misses.
+fn one_line_docstrings(bytes: &[u8]) -> u64 {
+    let text = String::from_utf8_lossy(bytes);
+    text.lines()
+        .filter(|line| {
+            let body = line
+                .trim()
+                .trim_start_matches(['r', 'R', 'u', 'U', 'b', 'B']);
+            ["\"\"\"", "'''"].iter().any(|q| {
+                body.len() >= 6
+                    && body.starts_with(q)
+                    && body.ends_with(q)
+                    && !body[3..body.len() - 3].contains(q)
+            })
+        })
+        .count() as u64
+}
+
 /// Lists files under `root`, honouring .gitignore and .ignore; hidden files count (like `.github/`), `.git` never.
 fn walk(root: &Path) -> Vec<Found> {
     let mut found = Vec::new();
@@ -157,11 +175,17 @@ fn count_file(
         Some(c) => (*c, Source::HashHit),
         None => {
             let stats = language.parse_from_slice(&bytes, config).summarise();
-            let c = Counted {
+            let mut c = Counted {
                 code: stats.code as u64,
                 comments: stats.comments as u64,
                 blanks: stats.blanks as u64,
             };
+            if language == LanguageType::Python {
+                // tokei counts a docstring opened and closed on one line as code; move those to comments.
+                let n = one_line_docstrings(&bytes).min(c.code);
+                c.code -= n;
+                c.comments += n;
+            }
             (c, Source::Counted)
         }
     };
@@ -333,6 +357,31 @@ mod tests {
             "def f():\n    \"\"\"Doc line one.\n\n    Doc line two.\n    \"\"\"\n    return 1\n",
         );
         tmp
+    }
+
+    #[test]
+    fn one_line_docstrings_are_found() {
+        let src = b"def f():\n    \"\"\"One.\"\"\"\n    x = \"\"\"not a doc\"\"\"\n    r'''Raw.'''\n    \"\"\"a\"\"\" + \"\"\"b\"\"\"\n    \"\"\"\n";
+        assert_eq!(one_line_docstrings(src), 2);
+    }
+
+    #[test]
+    fn python_one_line_docstrings_count_as_comments() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(
+            tmp.path(),
+            "a.py",
+            "class C:\n    \"\"\"Doc.\"\"\"\n\n    def g(self):\n        \"\"\"Doc.\"\"\"\n        return 1\n",
+        );
+        let scan = scan(
+            tmp.path(),
+            1,
+            &mut Counts::default(),
+            None,
+            Timestamp::now(),
+        );
+        let c = scan.totals.total.counts;
+        assert_eq!((c.code, c.comments, c.blanks), (3, 2, 1));
     }
 
     #[test]
