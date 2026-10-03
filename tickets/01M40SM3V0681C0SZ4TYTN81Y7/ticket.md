@@ -2,7 +2,8 @@
 id = "01M40SM3V0681C0SZ4TYTN81Y7"
 title = "Remove the Perl cloc at parity"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M40SKJNHMPP34A591K4MKVXS"
