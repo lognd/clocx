@@ -1,0 +1,13 @@
+kind = "create"
+title = "Remove frob:accept PROC001 workarounds now that frob scopes the rule"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M40SKJNHMPP34A591K4MKVXS"
+scope = ["crates/clocx/**", "frob.lock"]
+acceptance = ["Given frob with PROC001 scoped to declaring repositories, When check --ticket runs on crates/clocx, Then no frob:accept PROC001 directive remains and the check passes with no PROC001 or EXC finding"]
+body = "frob ~XGS6PK2 made PROC001 apply only to repositories declaring [check] process_spawners; the accepts added on 2026-10-03 are dead."
+at = "2026-10-03T12:43:43Z"
+actor = "lognd"
+rev = 1
