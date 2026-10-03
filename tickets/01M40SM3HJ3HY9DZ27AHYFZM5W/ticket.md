@@ -8,7 +8,7 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T12:06:32Z"
+updated = "2026-10-03T12:06:33Z"
 persona = "repository owner"
 capability = "see code, comment and blank lines per language and per top-level directory"
 outcome_text = "I know where code is and how much changed since I last looked"
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a previous run, When clocx runs again after edits, Then each row shows the code-line change since that run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given unchanged files, When clocx refreshes, Then their counts come from the content-hash cache instead of being recounted"
