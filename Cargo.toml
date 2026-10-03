@@ -1,0 +1,20 @@
+[workspace]
+resolver = "3"
+members = ["crates/clocx"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-2.0-only"
+repository = "https://github.com/lognd/cloc"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+# All output goes through the renderer module; it alone opts back in.
+print_stdout = "deny"
+print_stderr = "deny"
+dbg_macro = "deny"

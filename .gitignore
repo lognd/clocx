@@ -7,3 +7,27 @@ release_notes-?.??.txt
 .gitmodules
 Unix/cloc_submodule_test
 .frob/
+
+# Build and tool output
+build/
+dist/
+*.egg-info/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.a
+*.so
+*.dylib
+target/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+FROBLEMS.md
+.env
