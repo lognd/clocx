@@ -1,0 +1,8 @@
+kind = "create"
+object = "cycle"
+goal = "clocx skeleton, totals and JSON output"
+start = "2026-10-03"
+end = "2026-10-04"
+at = "2026-10-03T11:50:44Z"
+actor = "lognd"
+rev = 1
