@@ -8,7 +8,7 @@ points = 5
 parent = "01M40YS7F24KWB0TN8WFMBY2D8"
 reporter = "lognd"
 created = "2026-10-03T13:20:46Z"
-updated = "2026-10-03T13:31:24Z"
+updated = "2026-10-03T13:31:33Z"
 persona = "repository owner"
 capability = "get every push checked on three platforms and every version tag released as binaries and a crate"
 outcome_text = "users can install clocx without building it and breakage shows before release"
@@ -28,5 +28,5 @@ bound = true
 
 [[acceptance]]
 text = "Given the crate package, When cargo package runs, Then it builds with complete crates.io metadata and the README"
-bound = false
+bound = true
 +++
