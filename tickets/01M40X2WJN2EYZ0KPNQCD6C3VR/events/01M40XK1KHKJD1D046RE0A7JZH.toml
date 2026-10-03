@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T12:59:55Z"
+digest = "ba72f9a52b2d523510552ef02e32994758ae64add3d1d6596f248b621c7487b0"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+────────────
+ Nextest run ID 68814bdc-6553-44e7-93e8-21ad3b10880d with nextest profile: default
+    Starting 2 tests across 5 binaries (83 tests skipped)
+        PASS [   0.016s] (1/2) clocx cache::tests::corrupt_files_are_treated_as_empty
+        PASS [   0.029s] (2/2) clocx cache::tests::caches_from_an_older_version_are_discarded
+────────────
+     Summary [   0.030s] 2 tests run: 2 passed, 83 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/caches_from_an_older_version_are_discarded|corrupt_files_are_treated_as_empty/)"
+size = 527
+status = "measured"
+tests = ["cache::tests::corrupt_files_are_treated_as_empty", "cache::tests::caches_from_an_older_version_are_discarded"]
+at = "2026-10-03T12:59:55Z"
+actor = "lognd"
+rev = 1
