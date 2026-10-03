@@ -1,0 +1,15 @@
+kind = "create"
+title = "Workspace, CLI and renderer skeleton"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M40SKJNHMPP34A591K4MKVXS"
+persona = "repository owner"
+capability = "run clocx with a single rendering module that owns all output"
+outcome_text = "output stays consistent and no stray prints creep in"
+scope = ["Cargo.toml", "Cargo.lock", ".gitignore", "crates/clocx/**", "docs/**"]
+acceptance = ["Given the workspace, When cargo build runs, Then a clocx binary is produced", "Given any module outside render, When clippy runs, Then print_stdout and print_stderr are denied and a test fails on print macros outside render", "Given stdout is not a terminal or NO_COLOR is set, When clocx renders, Then no ANSI escapes are written"]
+at = "2026-10-03T11:50:35Z"
+actor = "lognd"
+rev = 1
