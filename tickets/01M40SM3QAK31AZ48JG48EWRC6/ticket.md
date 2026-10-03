@@ -2,7 +2,8 @@
 id = "01M40SM3QAK31AZ48JG48EWRC6"
 title = "Live dashboard view"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
