@@ -58,11 +58,23 @@ pub fn dir_key(rel: &str, depth: u16) -> String {
     dirs[..dirs.len().min(depth as usize)].join("/")
 }
 
-/// Lists files under `root`, honouring .gitignore, .ignore and hidden-file rules.
+/// The tokei settings every count uses: docstrings count as comments, as in cloc.
+///
+/// Documentation is comment, wherever it lives: Python docstrings here, and
+/// Markdown prose (tokei's default for literate formats).
+pub fn tokei_config() -> Config {
+    Config {
+        treat_doc_strings_as_comments: Some(true),
+        ..Config::default()
+    }
+}
+
+/// Lists files under `root`, honouring .gitignore and .ignore; hidden files count (like `.github/`), `.git` never.
 fn walk(root: &Path) -> Vec<Found> {
     let mut found = Vec::new();
     for entry in WalkBuilder::new(root)
-        .hidden(true)
+        .hidden(false)
+        .filter_entry(|e| e.file_name() != ".git")
         .require_git(false)
         .follow_links(false)
         .build()
@@ -211,7 +223,7 @@ pub fn scan(
     baseline: Option<&Snapshot>,
     now: Timestamp,
 ) -> Scan {
-    let config = Config::default();
+    let config = tokei_config();
     let found = walk(root);
     debug!(files = found.len(), "walked tree");
 
@@ -313,6 +325,13 @@ mod tests {
         write(r, "image.png", "\u{1}\u{2}");
         write(r, "target/out.rs", "fn ignored() {}\n");
         write(r, ".gitignore", "target/\n");
+        write(r, ".github/workflows/ci.yml", "on: push\njobs: {}\n");
+        write(r, ".git/config.rs", "fn not_counted() {}\n");
+        write(
+            r,
+            "pkg/mod.py",
+            "def f():\n    \"\"\"Doc line one.\n\n    Doc line two.\n    \"\"\"\n    return 1\n",
+        );
         tmp
     }
 
@@ -343,7 +362,27 @@ mod tests {
             }
         );
         assert_eq!(rust.code_delta, None);
-        assert_eq!(row(&t.languages, "Python").counts.code, 1);
+        let py = row(&t.languages, "Python");
+        assert_eq!(
+            (py.counts.files, py.counts.code),
+            (2, 3),
+            "docstrings are not code"
+        );
+        assert_eq!(
+            py.counts.comments,
+            1 + 4,
+            "the # comment plus four docstring lines"
+        );
+        assert_eq!(
+            row(&t.languages, "YAML").counts.files,
+            1,
+            "hidden .github is counted"
+        );
+        assert!(t.directories.iter().any(|r| r.name == ".github"));
+        assert!(
+            t.directories.iter().all(|r| r.name != ".git"),
+            ".git is never counted"
+        );
         assert!(
             t.languages.iter().all(|r| r.name != "PNG"),
             "binary files are not code"
@@ -370,6 +409,7 @@ mod tests {
 
         write(tmp.path(), "src/new.rs", "fn a() {}\nfn b() {}\n");
         fs::remove_file(tmp.path().join("scripts/run.py")).unwrap();
+        fs::remove_file(tmp.path().join(".github/workflows/ci.yml")).unwrap();
         let second = scan(
             tmp.path(),
             1,
@@ -381,9 +421,11 @@ mod tests {
 
         assert_eq!(row(&t.languages, "Rust").code_delta, Some(2));
         assert_eq!(row(&t.directories, "src").code_delta, Some(2));
-        let gone = row(&t.languages, "Python");
-        assert_eq!((gone.counts.files, gone.code_delta), (0, Some(-1)));
-        assert_eq!(t.total.code_delta, Some(1));
+        let py = row(&t.languages, "Python");
+        assert_eq!((py.counts.files, py.code_delta), (1, Some(-1)));
+        let gone = row(&t.languages, "YAML");
+        assert_eq!((gone.counts.files, gone.code_delta), (0, Some(-2)));
+        assert_eq!(t.total.code_delta, Some(-1));
         assert_eq!(t.baseline_at, first.snapshot.taken_at);
     }
 

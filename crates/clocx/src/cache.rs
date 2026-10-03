@@ -13,8 +13,9 @@ use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
-/// Bumped when the on-disk shape changes; older files are discarded.
-const VERSION: u32 = 1;
+/// Bumped when the on-disk shape or the counting rules change; older files are discarded.
+/// 2: docstrings count as comments.
+const VERSION: u32 = 2;
 const COUNTS_FILE: &str = "counts.json";
 const SNAPSHOT_FILE: &str = "snapshot.json";
 const COMMITS_FILE: &str = "commits.json";
@@ -288,6 +289,20 @@ mod tests {
         fs::write(dir.join(SNAPSHOT_FILE), b"[]").unwrap();
         assert!(store.load_counts().by_key.is_empty());
         assert!(store.load_snapshot().is_none());
+    }
+
+    #[test]
+    fn caches_from_an_older_version_are_discarded() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = Store::open(Some(tmp.path()), Path::new("/r"));
+        store.save_counts(&store.load_counts()).unwrap();
+        let dir = store.dir.clone().unwrap();
+        fs::write(
+            dir.join(COUNTS_FILE),
+            br#"{"version":1,"by_key":{"k:Rust":{"code":9,"comments":0,"blanks":0}},"by_path":{}}"#,
+        )
+        .unwrap();
+        assert!(store.load_counts().by_key.is_empty());
     }
 
     #[test]

@@ -232,7 +232,7 @@ pub fn summarise(
     let mut window_files: Vec<HashSet<&str>> = vec![HashSet::new(); WINDOWS.len()];
     let mut dirs: BTreeMap<String, DirAcc> = BTreeMap::new();
     let mut last: Option<i64> = None;
-    let config = tokei::Config::default();
+    let config = crate::totals::tokei_config();
     let mut is_code: HashMap<&str, bool> = HashMap::new();
 
     for commit in commits {
