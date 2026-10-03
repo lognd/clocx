@@ -2,7 +2,8 @@
 id = "01M40SM3KHP7KNC8JZ7NDZ230M"
 title = "Recent change activity from git history"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
