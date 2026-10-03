@@ -19,11 +19,10 @@ pub enum Align {
     Right,
 }
 
-/// One table cell: plain text plus the style it is painted with.
+/// One table cell: one or more runs of text, each with its own style.
 #[derive(Debug, Clone)]
 pub struct Cell {
-    text: String,
-    style: Style,
+    spans: Vec<(String, Style)>,
 }
 
 /// Replaces control characters (from odd file names) so cells cannot inject terminal escapes.
@@ -40,18 +39,45 @@ fn sanitize(text: String) -> String {
 impl Cell {
     /// An unstyled cell.
     pub fn plain(text: impl Into<String>) -> Self {
-        Self {
-            text: sanitize(text.into()),
-            style: Style::new(),
-        }
+        Self::styled(text, Style::new())
     }
 
     /// A cell painted with `style`.
     pub fn styled(text: impl Into<String>, style: Style) -> Self {
+        Self::spans(vec![(text.into(), style)])
+    }
+
+    /// A cell of several styled runs, drawn side by side (empty runs are dropped).
+    pub fn spans(spans: Vec<(String, Style)>) -> Self {
         Self {
-            text: sanitize(text.into()),
-            style,
+            spans: spans
+                .into_iter()
+                .filter(|(t, _)| !t.is_empty())
+                .map(|(t, s)| (sanitize(t), s))
+                .collect(),
         }
+    }
+
+    /// Display width of all runs together.
+    fn width(&self) -> usize {
+        self.spans.iter().map(|(t, _)| t.width()).sum()
+    }
+
+    /// The runs painted; `over` replaces unstyled runs (used for the total row).
+    fn painted(&self, over: Option<Style>) -> String {
+        self.spans
+            .iter()
+            .map(|(t, s)| match over {
+                Some(o) if *s == Style::new() => paint(o, t),
+                _ => paint(*s, t),
+            })
+            .collect()
+    }
+
+    /// The text without styles.
+    #[cfg(test)]
+    fn text(&self) -> String {
+        self.spans.iter().map(|(t, _)| t.as_str()).collect()
     }
 }
 
@@ -132,7 +158,7 @@ impl Table {
         let mut widths: Vec<usize> = self.columns.iter().map(|(h, _)| h.width()).collect();
         for row in self.rows.iter().chain(self.total.iter()) {
             for (w, cell) in widths.iter_mut().zip(row) {
-                *w = (*w).max(cell.text.width());
+                *w = (*w).max(cell.width());
             }
         }
         widths
@@ -144,12 +170,8 @@ impl Table {
         for (i, ((cell, width), (_, align))) in
             cells.iter().zip(widths).zip(&self.columns).enumerate()
         {
-            let pad = width.saturating_sub(cell.text.width());
-            let style = match over {
-                Some(s) if cell.style == Style::new() => s,
-                _ => cell.style,
-            };
-            let painted = paint(style, &cell.text);
+            let pad = width.saturating_sub(cell.width());
+            let painted = cell.painted(over);
             if i > 0 {
                 line.push_str(&" ".repeat(GAP));
             }
@@ -176,24 +198,26 @@ impl Table {
 mod tests {
     use super::*;
 
-    fn plain_theme() -> Theme {
-        let p = Style::new();
-        Theme {
-            title: p,
-            header: p,
-            dim: p,
-            added: p,
-            removed: p,
-            name: p,
-            spark: p,
-            warn: p,
-        }
+    #[test]
+    fn control_characters_are_replaced() {
+        assert_eq!(Cell::plain("a\u{1b}[31mb\n").text(), "a?[31mb?");
+        assert_eq!(Cell::plain("plain").text(), "plain");
     }
 
     #[test]
-    fn control_characters_are_replaced() {
-        assert_eq!(Cell::plain("a\u{1b}[31mb\n").text, "a?[31mb?");
-        assert_eq!(Cell::plain("plain").text, "plain");
+    fn spans_are_measured_together_and_painted_separately() {
+        let t = Theme::default();
+        let c = Cell::spans(vec![
+            ("+3".into(), t.added),
+            (" ".into(), Style::new()),
+            ("-1".into(), t.removed),
+            (String::new(), t.dim),
+        ]);
+        assert_eq!(c.width(), 5);
+        assert_eq!(
+            c.painted(None),
+            format!("{} {}", paint(t.added, "+3"), paint(t.removed, "-1"))
+        );
     }
 
     #[test]
@@ -206,7 +230,7 @@ mod tests {
         t.row(vec![Cell::plain("C"), Cell::plain("7")]);
         t.total(vec![Cell::plain("Total"), Cell::plain("1,241")]);
         let mut out = String::new();
-        t.render(&plain_theme(), &mut out);
+        t.render(&Theme::plain(), &mut out);
         let lines: Vec<&str> = out.lines().collect();
         assert_eq!(lines[0], "Languages");
         assert_eq!(lines[1], "Language   Code");

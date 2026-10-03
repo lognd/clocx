@@ -12,6 +12,90 @@ pub struct Report {
     pub generated_at: Timestamp,
     /// Line totals by language and by directory.
     pub totals: Totals,
+    /// Lines added and removed in recent git history; unavailable outside a repository.
+    pub activity: Section<Activity>,
+}
+
+/// A report section that may be unavailable (for example git data outside a repository).
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum Section<T> {
+    /// The section was computed.
+    Ok(T),
+    /// The section could not be computed; `reason` says why, for people.
+    Unavailable {
+        /// Why, in a few words.
+        reason: String,
+    },
+}
+
+impl<T> Section<T> {
+    /// The data when available.
+    pub fn ok(&self) -> Option<&T> {
+        match self {
+            Section::Ok(t) => Some(t),
+            Section::Unavailable { .. } => None,
+        }
+    }
+}
+
+/// Lines added and removed, files touched and commits made, over some span.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct Churn {
+    /// Lines added.
+    pub added: u64,
+    /// Lines removed.
+    pub removed: u64,
+    /// Distinct files touched.
+    pub files: u64,
+    /// Commits.
+    pub commits: u64,
+}
+
+impl Churn {
+    /// Lines added plus removed: how much changed.
+    pub fn lines(&self) -> u64 {
+        self.added + self.removed
+    }
+}
+
+/// Activity over one window (for example the last hour) with a bucketed trend.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ActivityWindow {
+    /// Short label: `1h`, `24h`, `7d`, `30d`.
+    pub label: String,
+    /// Window length in seconds.
+    pub seconds: i64,
+    /// What changed in the window.
+    pub churn: Churn,
+    /// Lines changed per bucket, oldest first, for a sparkline.
+    pub trend: Vec<u64>,
+}
+
+/// Activity in one directory, per window (same order as [`Activity::windows`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DirActivity {
+    /// Directory at the report depth (`.` for the root itself).
+    pub name: String,
+    /// Churn per window.
+    pub windows: Vec<Churn>,
+    /// Lines changed per bucket over the 7-day window, oldest first.
+    pub trend: Vec<u64>,
+}
+
+/// Recent change activity from git history, across all local branches.
+#[derive(Debug, Clone, Serialize)]
+pub struct Activity {
+    /// Directory grouping depth.
+    pub depth: u16,
+    /// Windows from shortest to longest.
+    pub windows: Vec<ActivityWindow>,
+    /// Directories with activity in the longest window, busiest recently first.
+    pub directories: Vec<DirActivity>,
+    /// Branch tips the history walk started from.
+    pub branches: u64,
+    /// Time of the newest non-merge commit seen.
+    pub last_commit_at: Option<Timestamp>,
 }
 
 /// Files and code, comment and blank lines of some group of files.

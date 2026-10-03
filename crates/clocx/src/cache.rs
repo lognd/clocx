@@ -17,6 +17,14 @@ use tracing::{debug, warn};
 const VERSION: u32 = 1;
 const COUNTS_FILE: &str = "counts.json";
 const SNAPSHOT_FILE: &str = "snapshot.json";
+const COMMITS_FILE: &str = "commits.json";
+
+/// Per-commit churn by commit id, as stored on disk.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct Commits {
+    version: u32,
+    commits: crate::activity::CommitCache,
+}
 
 /// Code, comment and blank lines of one file's content.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,6 +155,28 @@ impl Store {
     pub fn load_snapshot(&self) -> Option<Snapshot> {
         self.load::<Snapshot>(SNAPSHOT_FILE)
             .filter(|s| s.version == VERSION)
+    }
+
+    /// Loads the per-commit churn cache; empty when absent, stale or unreadable.
+    pub fn load_commits(&self) -> crate::activity::CommitCache {
+        self.load::<Commits>(COMMITS_FILE)
+            .filter(|c| c.version == VERSION)
+            .map(|c| c.commits)
+            .unwrap_or_default()
+    }
+
+    /// Writes the per-commit churn cache.
+    ///
+    /// # Errors
+    /// Returns [`SaveError`] when the file cannot be encoded or written.
+    pub fn save_commits(&self, commits: &crate::activity::CommitCache) -> Result<(), SaveError> {
+        self.save(
+            COMMITS_FILE,
+            &Commits {
+                version: VERSION,
+                commits: commits.clone(),
+            },
+        )
     }
 
     /// Writes the counts cache.

@@ -3,9 +3,11 @@
 //! Data flows one way: the compute modules build a [`model::Report`], and
 //! [`render`] alone turns it into output. Diagnostics go through `tracing`.
 
+pub mod activity;
 pub mod cache;
 pub mod cli;
 pub mod error;
+pub mod git;
 pub mod logging;
 pub mod model;
 pub mod render;
@@ -20,7 +22,7 @@ use tracing::{debug, error, info, warn};
 
 use cli::Args;
 use error::Error;
-use model::Report;
+use model::{Activity, Report, Section};
 
 /// Computes the report for the parsed arguments.
 ///
@@ -48,11 +50,46 @@ pub fn build_report(args: &Args) -> Result<Report, Error> {
     if let Err(e) = store.save_snapshot(&scan.snapshot) {
         warn!(error = %e, "snapshot not saved; the next run shows no change column");
     }
+    let activity = activity_section(&root, args.depth, now, &store);
     Ok(Report {
         root: root.display().to_string(),
         generated_at: now,
         totals: scan.totals,
+        activity,
     })
+}
+
+/// Computes the git activity section; outside a repository or on a git error it is unavailable, not fatal.
+fn activity_section(
+    root: &std::path::Path,
+    depth: u16,
+    now: Timestamp,
+    store: &cache::Store,
+) -> Section<Activity> {
+    let repo = match git::Repo::discover(root) {
+        Ok(r) => r,
+        Err(e) => {
+            info!(reason = %e, "no git activity");
+            return Section::Unavailable {
+                reason: e.to_string(),
+            };
+        }
+    };
+    let mut commits = store.load_commits();
+    match activity::collect(&repo, depth, now, &mut commits) {
+        Ok(a) => {
+            if let Err(e) = store.save_commits(&commits) {
+                warn!(error = %e, "commit cache not saved");
+            }
+            Section::Ok(a)
+        }
+        Err(e) => {
+            warn!(error = %e, "git history could not be read");
+            Section::Unavailable {
+                reason: e.to_string(),
+            }
+        }
+    }
 }
 
 /// Runs clocx with already-parsed arguments.

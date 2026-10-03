@@ -38,6 +38,24 @@ impl Default for Theme {
     }
 }
 
+impl Theme {
+    /// A theme with no styles at all, so tests can compare plain text.
+    #[cfg(test)]
+    pub fn plain() -> Self {
+        let p = Style::new();
+        Self {
+            title: p,
+            header: p,
+            dim: p,
+            added: p,
+            removed: p,
+            name: p,
+            spark: p,
+            warn: p,
+        }
+    }
+}
+
 /// Wraps `text` in `style`'s escape codes; plain styles add nothing.
 pub fn paint(style: Style, text: &str) -> String {
     if style == Style::new() {

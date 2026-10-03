@@ -3,13 +3,14 @@
 use super::format;
 use super::style::{Theme, paint};
 use super::table::{Align, Cell, Table};
-use crate::model::{Report, Totals, TotalsRow};
+use crate::model::{Activity, Churn, DirActivity, Report, Section, Totals, TotalsRow};
 
 /// Builds the whole text report.
 pub fn report(report: &Report, theme: &Theme, rows: usize) -> String {
     let mut out = String::new();
     header(report, theme, &mut out);
     totals(&report.totals, report, theme, rows, &mut out);
+    activity(&report.activity, report, theme, rows, &mut out);
     out
 }
 
@@ -36,20 +37,27 @@ pub(super) fn delta_cell(delta: Option<i64>, theme: &Theme) -> Cell {
     }
 }
 
+/// Splits rows into those shown (the first `limit`, plus any later row `keep` accepts) and those folded away.
+fn split<T>(rows: &[T], limit: usize, keep: impl Fn(&T) -> bool) -> (Vec<&T>, Vec<&T>) {
+    if limit == 0 || rows.len() <= limit {
+        return (rows.iter().collect(), Vec::new());
+    }
+    rows.iter().enumerate().fold(
+        (Vec::new(), Vec::new()),
+        |(mut shown, mut folded), (i, r)| {
+            if i < limit || keep(r) {
+                shown.push(r);
+            } else {
+                folded.push(r);
+            }
+            (shown, folded)
+        },
+    )
+}
+
 /// Keeps the first `limit` rows plus any later row that changed; the rest fold into one `N more` row.
 fn fold(rows: &[TotalsRow], limit: usize) -> (Vec<&TotalsRow>, Option<TotalsRow>) {
-    if limit == 0 || rows.len() <= limit {
-        return (rows.iter().collect(), None);
-    }
-    let changed = |r: &TotalsRow| r.code_delta.is_some_and(|d| d != 0);
-    let (mut shown, mut folded) = (Vec::new(), Vec::new());
-    for (i, r) in rows.iter().enumerate() {
-        if i < limit || changed(r) {
-            shown.push(r);
-        } else {
-            folded.push(r);
-        }
-    }
+    let (shown, folded) = split(rows, limit, |r| r.code_delta.is_some_and(|d| d != 0));
     if folded.is_empty() {
         return (shown, None);
     }
@@ -157,25 +165,132 @@ fn totals(totals: &Totals, report: &Report, theme: &Theme, limit: usize, out: &m
     }
 }
 
+/// Lines added and removed as `+a -r` in green and red; blank when nothing changed.
+fn churn_cell(c: &Churn, theme: &Theme) -> Cell {
+    let sep = if c.added > 0 && c.removed > 0 {
+        " "
+    } else {
+        ""
+    };
+    Cell::spans(vec![
+        (format::added(c.added), theme.added),
+        (sep.to_owned(), anstyle::Style::new()),
+        (format::removed(c.removed), theme.removed),
+    ])
+}
+
+/// A count that is blank when zero, so quiet rows stay quiet.
+fn quiet_count(n: u64) -> Cell {
+    Cell::plain(if n == 0 {
+        String::new()
+    } else {
+        format::count(n)
+    })
+}
+
+/// The activity windows table and the per-directory "where work is happening" table.
+fn activity(
+    section: &Section<Activity>,
+    report: &Report,
+    theme: &Theme,
+    limit: usize,
+    out: &mut String,
+) {
+    out.push('\n');
+    let a = match section {
+        Section::Ok(a) => a,
+        Section::Unavailable { reason } => {
+            out.push_str(&paint(
+                theme.dim,
+                &format!("Activity: unavailable ({reason}).\n"),
+            ));
+            return;
+        }
+    };
+    let mut windows = Table::new(
+        "Activity",
+        &[
+            ("Window", Align::Left),
+            ("Added", Align::Right),
+            ("Removed", Align::Right),
+            ("Files", Align::Right),
+            ("Commits", Align::Right),
+            ("Trend", Align::Left),
+        ],
+    );
+    for w in &a.windows {
+        windows.row(vec![
+            Cell::styled(format!("last {}", w.label), theme.name),
+            Cell::styled(format::added(w.churn.added), theme.added),
+            Cell::styled(format::removed(w.churn.removed), theme.removed),
+            quiet_count(w.churn.files),
+            quiet_count(w.churn.commits),
+            Cell::styled(format::sparkline(&w.trend), theme.spark),
+        ]);
+    }
+    windows.render(theme, out);
+    let last = a.last_commit_at.map_or_else(
+        || "no commits yet".to_owned(),
+        |t| format!("last commit {}", format::age(t, report.generated_at)),
+    );
+    let plural = if a.branches == 1 { "" } else { "es" };
+    out.push_str(&paint(
+        theme.dim,
+        &format!("Across {} branch{plural}; {last}.\n", a.branches),
+    ));
+
+    if a.directories.is_empty() {
+        return;
+    }
+    out.push('\n');
+    let mut columns: Vec<(String, Align)> = vec![("Directory".into(), Align::Left)];
+    columns.extend(a.windows.iter().map(|w| (w.label.clone(), Align::Right)));
+    columns.push(("7d trend".into(), Align::Left));
+    let columns: Vec<(&str, Align)> = columns.iter().map(|(h, al)| (h.as_str(), *al)).collect();
+    let mut dirs = Table::new("Where work is happening", &columns);
+    // Anything touched in the last day stays visible however long the table is.
+    let (shown, folded) = split(&a.directories, limit, |d: &DirActivity| {
+        d.windows.iter().take(2).any(|c| c.lines() > 0)
+    });
+    let row = |name: Cell, d: &DirActivity| {
+        let mut cells = vec![name];
+        cells.extend(d.windows.iter().map(|c| churn_cell(c, theme)));
+        cells.push(Cell::styled(format::sparkline(&d.trend), theme.spark));
+        cells
+    };
+    for d in shown {
+        dirs.row(row(Cell::styled(d.name.clone(), theme.name), d));
+    }
+    if !folded.is_empty() {
+        let mut rest = DirActivity {
+            name: String::new(),
+            windows: vec![Churn::default(); a.windows.len()],
+            trend: vec![0; folded[0].trend.len()],
+        };
+        for d in &folded {
+            for (r, c) in rest.windows.iter_mut().zip(&d.windows) {
+                r.added += c.added;
+                r.removed += c.removed;
+            }
+            for (r, t) in rest.trend.iter_mut().zip(&d.trend) {
+                *r += t;
+            }
+        }
+        dirs.row(row(
+            Cell::styled(format!("{} more", folded.len()), theme.dim),
+            &rest,
+        ));
+    }
+    dirs.render(theme, out);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::render::sample;
-    use anstyle::Style;
 
     fn plain(report: &Report) -> String {
-        let p = Style::new();
-        let theme = Theme {
-            title: p,
-            header: p,
-            dim: p,
-            added: p,
-            removed: p,
-            name: p,
-            spark: p,
-            warn: p,
-        };
-        super::report(report, &theme, 0)
+        super::report(report, &Theme::plain(), 0)
     }
 
     #[test]
@@ -215,6 +330,40 @@ mod tests {
         let mut r = sample::report();
         r.totals.languages.clear();
         assert!(plain(&r).contains("No source files found."));
+    }
+
+    #[test]
+    fn activity_shows_windows_and_directories() {
+        let out = plain(&sample::report());
+        assert!(out.contains("Activity\n"));
+        let hour = out.lines().find(|l| l.starts_with("last 1h")).unwrap();
+        assert!(hour.contains("+42") && hour.contains("-10"), "{hour:?}");
+        assert!(out.contains("Across 3 branches; last commit 5m ago."));
+        let (_, work) = out.split_once("Where work is happening\n").unwrap();
+        let crates = work.lines().find(|l| l.starts_with("crates")).unwrap();
+        assert!(crates.contains("+42 -10"), "{crates:?}");
+        let docs = work.lines().find(|l| l.starts_with("docs")).unwrap();
+        assert!(docs.contains("+5") && !docs.contains("+5 -"), "{docs:?}");
+    }
+
+    #[test]
+    fn unavailable_activity_says_why() {
+        let mut r = sample::report();
+        r.activity = Section::Unavailable {
+            reason: "not a git repository".into(),
+        };
+        let out = plain(&r);
+        assert!(out.contains("Activity: unavailable (not a git repository)."));
+        assert!(!out.contains("Where work is happening"));
+    }
+
+    #[test]
+    fn split_keeps_rows_the_predicate_wants() {
+        let rows = [1, 2, 30, 4];
+        let (shown, folded) = split(&rows, 1, |r| *r > 10);
+        assert_eq!(shown, [&1, &30]);
+        assert_eq!(folded, [&2, &4]);
+        assert_eq!(split(&rows, 0, |_| false).1.len(), 0);
     }
 
     #[test]
