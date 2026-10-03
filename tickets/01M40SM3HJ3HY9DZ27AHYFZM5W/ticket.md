@@ -2,7 +2,8 @@
 id = "01M40SM3HJ3HY9DZ27AHYFZM5W"
 title = "Totals by language and directory with change since last run"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
