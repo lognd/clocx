@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:19:52Z"
+digest = "0560711a4648ebc07ee943cc75f80ccace73d7f17635200fd27f0af1fe030871"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+────────────
+ Nextest run ID 90cb56ef-016c-4d95-8f6f-8425bc04c3c9 with nextest profile: default
+    Starting 4 tests across 4 binaries (53 tests skipped)
+        PASS [   0.067s] (1/4) clocx render::text::tests::activity_shows_windows_and_directories
+        PASS [   0.144s] (2/4) clocx::cli fresh_commit_shows_in_the_last_hour
+        PASS [   0.166s] (3/4) clocx activity::tests::directories_are_ranked_by_recent_work
+        PASS [   0.212s] (4/4) clocx activity::tests::a_subdirectory_root_sees_only_its_paths
+────────────
+     Summary [   0.214s] 4 tests run: 4 passed, 53 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/directories_are_ranked_by_recent_work|a_subdirectory_root_sees_only_its_paths|activity_shows_windows_and_directories|fresh_commit_shows_in_the_last_hour/)"
+size = 708
+status = "measured"
+tests = ["fresh_commit_shows_in_the_last_hour", "render::text::tests::activity_shows_windows_and_directories", "activity::tests::directories_are_ranked_by_recent_work", "activity::tests::a_subdirectory_root_sees_only_its_paths"]
+at = "2026-10-03T12:19:52Z"
+actor = "lognd"
+rev = 1
