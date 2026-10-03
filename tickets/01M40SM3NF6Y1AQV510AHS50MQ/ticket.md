@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given uncommitted edits in a worktree, When clocx runs, Then lines added and removed against its HEAD are shown"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a branch with commits beyond the base, When clocx runs, Then commits ahead and total lines added and removed against the base are shown"
