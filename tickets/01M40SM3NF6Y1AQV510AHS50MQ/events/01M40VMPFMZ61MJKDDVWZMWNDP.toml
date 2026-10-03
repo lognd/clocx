@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/master"
+commit = "3c1e86e9143315c37ac827428d8b971116412a6e"
+branch = "ticket/AHS50MQ"
+pushed = false
+at = "2026-10-03T12:25:52Z"
+actor = "lognd"
+rev = 1
