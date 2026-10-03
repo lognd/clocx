@@ -3,8 +3,8 @@ id = "01M40SMBR6HW2WE06RN6JVDWN0"
 start = "2026-10-03"
 end = "2026-10-04"
 goal = "clocx skeleton, totals and JSON output"
-state = "planned"
+state = "closed"
 tickets = ["01M40SM3FPZD9RMETEZ8GM2FQ6", "01M40SM3HJ3HY9DZ27AHYFZM5W", "01M40SM3S4FX7HTW7HRKP840XZ"]
 created = "2026-10-03T11:50:44Z"
-updated = "2026-10-03T11:50:50Z"
+updated = "2026-10-03T12:09:39Z"
 +++
