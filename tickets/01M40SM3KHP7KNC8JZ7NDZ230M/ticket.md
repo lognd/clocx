@@ -8,11 +8,11 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:35Z"
-updated = "2026-10-03T11:58:48Z"
+updated = "2026-10-03T12:00:41Z"
 persona = "repository owner"
 capability = "see lines added and removed and files touched over the last hour, day, 7 and 30 days by directory"
 outcome_text = "I see where work is happening right now"
-scope = ["crates/clocx/**", "docs/**", "Cargo.lock", "frob.lock", "tests/inputs/issues/280/L/locale_facets.h", "tests/inputs/issues/280/R/locale_facets.h", "tests/inputs/issues/513/L/hello_1.c", "tests/inputs/issues/513/L/locale_facets.h", "tests/inputs/issues/513/R/hello_2.c", "tests/inputs/issues/513/R/locale_facets.h"]
+scope = ["crates/clocx/**", "docs/**", "Cargo.lock", "frob.lock", "tests/inputs/issues/280/L/locale_facets.h", "tests/inputs/issues/280/R/locale_facets.h", "tests/inputs/issues/513/L/hello_1.c", "tests/inputs/issues/513/L/locale_facets.h", "tests/inputs/issues/513/R/hello_2.c", "tests/inputs/issues/513/R/locale_facets.h", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given commits at known times, When clocx runs, Then added, removed, files and commits are reported for 1h, 24h, 7d and 30d windows"

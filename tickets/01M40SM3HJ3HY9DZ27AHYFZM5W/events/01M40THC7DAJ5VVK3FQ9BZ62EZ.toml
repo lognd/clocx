@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T12:06:34Z"
+digest = "f34bf96d4536623c4ba553ac3b07c06dc1f7674fcddee7415a0345d3e0e260f9"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+────────────
+ Nextest run ID 88f81f06-1f54-467e-afce-26e2e97d4591 with nextest profile: default
+    Starting 4 tests across 4 binaries (31 tests skipped)
+        PASS [   0.013s] (1/4) clocx cache::tests::corrupt_files_are_treated_as_empty
+        PASS [   0.025s] (2/4) clocx cache::tests::round_trips_counts_and_snapshot
+        PASS [   0.026s] (3/4) clocx totals::tests::unchanged_files_come_from_the_cache
+        PASS [   0.045s] (4/4) clocx totals::tests::cache_is_pruned_to_files_seen
+────────────
+     Summary [   0.046s] 4 tests run: 4 passed, 31 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/unchanged_files_come_from_the_cache|cache_is_pruned|round_trips_counts|corrupt_files_are_treated_as_empty/)"
+size = 686
+status = "measured"
+tests = ["cache::tests::corrupt_files_are_treated_as_empty", "cache::tests::round_trips_counts_and_snapshot", "totals::tests::unchanged_files_come_from_the_cache", "totals::tests::cache_is_pruned_to_files_seen"]
+at = "2026-10-03T12:06:34Z"
+actor = "lognd"
+rev = 1

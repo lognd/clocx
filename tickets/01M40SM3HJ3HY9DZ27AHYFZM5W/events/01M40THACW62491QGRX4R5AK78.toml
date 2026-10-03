@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:06:33Z"
+digest = "5aa2fcb87f082469518fa2e0a4ad0ed610edf855db7827d2c6e51dd2e7b99b3c"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+────────────
+ Nextest run ID 6ee64b81-fab5-45cc-8235-c3f885712496 with nextest profile: default
+    Starting 4 tests across 4 binaries (31 tests skipped)
+        PASS [   0.011s] (1/4) clocx render::text::tests::no_baseline_means_no_change_column
+        PASS [   0.028s] (2/4) clocx totals::tests::directory_deltas_need_the_same_depth
+        PASS [   0.041s] (3/4) clocx totals::tests::deltas_compare_with_the_previous_snapshot
+        PASS [   0.053s] (4/4) clocx::cli second_run_shows_change_since_the_first
+────────────
+     Summary [   0.054s] 4 tests run: 4 passed, 31 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/deltas_compare_with_the_previous_snapshot|directory_deltas_need_the_same_depth|second_run_shows_change|no_baseline_means_no_change_column/)"
+size = 705
+status = "measured"
+tests = ["render::text::tests::no_baseline_means_no_change_column", "totals::tests::directory_deltas_need_the_same_depth", "totals::tests::deltas_compare_with_the_previous_snapshot", "second_run_shows_change_since_the_first"]
+at = "2026-10-03T12:06:33Z"
+actor = "lognd"
+rev = 1
