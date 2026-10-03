@@ -8,7 +8,7 @@ points = 5
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:36Z"
-updated = "2026-10-03T12:36:55Z"
+updated = "2026-10-03T12:36:56Z"
 persona = "repository owner"
 capability = "leave a full-screen dashboard open that refreshes on file and git changes"
 outcome_text = "I can watch progress on a second screen"
@@ -24,5 +24,5 @@ bound = true
 
 [[acceptance]]
 text = "Given a refresh, When most files are unchanged, Then only changed files are recounted"
-bound = false
+bound = true
 +++
