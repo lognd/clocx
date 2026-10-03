@@ -8,7 +8,7 @@ points = 2
 parent = "01M40SKJNHMPP34A591K4MKVXS"
 reporter = "lognd"
 created = "2026-10-03T11:50:36Z"
-updated = "2026-10-03T12:09:30Z"
+updated = "2026-10-03T12:09:31Z"
 persona = "repository owner"
 capability = "get the same report as JSON"
 outcome_text = "scripts can consume it"
@@ -20,5 +20,5 @@ bound = true
 
 [[acceptance]]
 text = "Given --json, When stdout is a terminal, Then no ANSI escapes appear in the output"
-bound = false
+bound = true
 +++
