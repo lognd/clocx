@@ -30,12 +30,17 @@ keeps it open as a dashboard instead.
 
 ## Totals
 
-clocx walks `PATH` honouring `.gitignore`, `.ignore` and hidden-file
-rules (also outside a git repository), detects each file's language with
-tokei, and counts code, comment and blank lines. Lines of languages
+clocx walks `PATH` honouring `.gitignore` and `.ignore` (also outside
+a git repository), detects each file's language with tokei, and counts
+code, comment and blank lines. Hidden files and directories count (for
+example `.github/workflows`); `.git` never does. Lines of languages
 embedded in another file (for example code blocks in Markdown) count
 toward the outer file's language. Files tokei does not recognise are
 not code and are left out.
+
+Documentation counts as comment wherever it lives: Python docstrings
+(one-line ones included, which tokei alone would call code) and
+Markdown prose. Code blocks inside Markdown count as code.
 
 Two tables follow: by language, and by directory at `--depth` (`.` is
 the root itself; files shallower than the depth group under their own
@@ -212,6 +217,24 @@ followed by a newline. It is never colored, whatever `--color` says.
 | `crates/clocx/src/render/` | All output: `sections` builds the tables once; `text`, `json` and `live` (ratatui) draw them; `style` is the one palette. |
 | `crates/clocx/src/logging.rs` | `tracing` subscriber setup. |
 | `crates/clocx/src/error.rs` | The run's error type. |
+
+## Differences from cloc
+
+Checked on 2026-10-03 against the Perl cloc (`cloc --vcs=git`) on four
+local repositories (typani, mdcat, lograder, frob; Python, Rust,
+Markdown, TOML, YAML and more). Code lines agree within a few percent
+for Python (-0.2% to +4%), and exactly or nearly for Rust, TOML, YAML
+and JSON. The remaining differences are deliberate or are cloc's:
+
+| Difference | Why |
+| --- | --- |
+| Markdown prose is comment, not code | Documentation is comment (tokei's rule); only code blocks are code. Markdown-heavy trees therefore show far less "code" than cloc. |
+| More files counted | cloc counts files with identical content once (all empty `__init__.py` files count as one); clocx counts every file. |
+| Untracked files counted | clocx counts files git would not ignore, tracked or not, so new work shows before it is added. |
+| Shebang lines are comments | tokei's rule; cloc counts them as code. |
+| Some names differ | tokei's language names (`Jinja2`, `C Header`, `BASH`). |
+| A few data formats are left out | CSV and theme files such as `.tmTheme` are not code to tokei. |
+| Comments inside strings | tokei tracks string literals, so `/*` inside a string does not open a comment; cloc can lose its place (it counted one 1,800-line Rust file in frob as all comment). |
 
 ## Licence
 

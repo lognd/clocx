@@ -1,0 +1,1 @@
+Totals now include tracked dotfiles and dot-directories (such as `.github/`, never `.git/`), and Python docstrings, one-line ones included, count as comments, as in cloc. Existing count caches are recounted once.
