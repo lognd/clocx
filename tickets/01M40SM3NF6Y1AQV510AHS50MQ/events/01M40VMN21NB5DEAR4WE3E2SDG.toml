@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:25:50Z"
+digest = "37539a1349ba328ea20a720295d31a97d82c631ffd1948defc30d67ed5aea07a"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+────────────
+ Nextest run ID d66ef856-f0b2-4d16-9803-cccdd1f505cc with nextest profile: default
+    Starting 4 tests across 4 binaries (64 tests skipped)
+        PASS [   0.006s] (1/4) clocx git::tests::line_churn_counts_and_ignores_line_endings
+        PASS [   0.051s] (2/4) clocx worktrees::tests::uncommitted_edits_and_new_files_count_against_head
+        PASS [   0.055s] (3/4) clocx worktrees::tests::line_ending_only_changes_are_not_work
+        PASS [   0.065s] (4/4) clocx::cli worktrees_show_uncommitted_work_and_progress
+────────────
+     Summary [   0.066s] 4 tests run: 4 passed, 64 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/uncommitted_edits_and_new_files_count_against_head|line_ending_only_changes_are_not_work|line_churn_counts_and_ignores_line_endings|worktrees_show_uncommitted_work_and_progress/)"
+size = 725
+status = "measured"
+tests = ["git::tests::line_churn_counts_and_ignores_line_endings", "worktrees::tests::uncommitted_edits_and_new_files_count_against_head", "worktrees::tests::line_ending_only_changes_are_not_work", "worktrees_show_uncommitted_work_and_progress"]
+at = "2026-10-03T12:25:50Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T12:25:51Z"
+digest = "5589a1e5ed2418cd68527fa5aa0b7043fb0dc97905f0a27026863f3c6f700530"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+────────────
+ Nextest run ID 1dea4c8c-0276-4146-90d4-ac9607bbd4a9 with nextest profile: default
+    Starting 3 tests across 4 binaries (65 tests skipped)
+        PASS [   0.054s] (1/3) clocx worktrees::tests::explicit_and_missing_bases
+        PASS [   0.063s] (2/3) clocx worktrees::tests::commits_ahead_and_lines_against_base
+        PASS [   0.065s] (3/3) clocx::cli worktrees_show_uncommitted_work_and_progress
+────────────
+     Summary [   0.066s] 3 tests run: 3 passed, 65 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p clocx -E test(/commits_ahead_and_lines_against_base|explicit_and_missing_bases|worktrees_show_uncommitted_work_and_progress/)"
+size = 608
+status = "measured"
+tests = ["worktrees::tests::explicit_and_missing_bases", "worktrees::tests::commits_ahead_and_lines_against_base", "worktrees_show_uncommitted_work_and_progress"]
+at = "2026-10-03T12:25:51Z"
+actor = "lognd"
+rev = 1
