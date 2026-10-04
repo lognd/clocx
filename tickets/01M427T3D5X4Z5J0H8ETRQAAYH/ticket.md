@@ -8,11 +8,11 @@ points = 3
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:17:46Z"
-updated = "2026-10-04T01:17:51Z"
+updated = "2026-10-04T01:21:16Z"
 persona = "clocx user with Python but no Rust toolchain"
 capability = "uvx clocx / uv tool install clocx / pipx install clocx"
 outcome_text = "I get a prebuilt clocx without compiling it"
-scope = [".github/**", "pyproject.toml", "docs/**", "README.md", "changelog.d/**", ".gitignore"]
+scope = [".github/**", "pyproject.toml", "docs/**", "README.md", "changelog.d/**", ".gitignore", "frob.toml"]
 
 [[acceptance]]
 text = "Given pyproject.toml, When maturin builds the project, Then it produces a py3-none wheel holding the clocx binary whose version equals the crate version"

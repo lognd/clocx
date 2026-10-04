@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/**", "pyproject.toml", "docs/**", "README.md", "changelog.d/**", ".gitignore"]
+new = [".github/**", "pyproject.toml", "docs/**", "README.md", "changelog.d/**", ".gitignore", "frob.toml"]
+at = "2026-10-04T01:21:16Z"
+actor = "lognd"
+rev = 1
