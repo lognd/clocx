@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Trials in throwaway clones without a remote: (1) the new awk extracts the frob-written '## 0.2.1 - 2026-10-03' section without its frob-section marker, and the hand-written 0.2.0 and 0.1.1 sections; '0.2' and '9.9.9' extract nothing, so the step still fails on a missing section. (3) With core.autocrlf=true, frob release cut failed with E-GIT-LOCAL-EDITS on CHANGELOG.md and left its edits behind; with '* text=auto eol=lf' in .gitattributes and autocrlf still true, the cut committed and tagged clocx-v0.2.1. (2) is proven by the next release, which pushes the release commit and tag together."
+at = "2026-10-04T01:49:37Z"
+actor = "lognd"
+rev = 1
