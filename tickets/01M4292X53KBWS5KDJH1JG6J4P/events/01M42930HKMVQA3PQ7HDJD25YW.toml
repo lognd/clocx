@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in cloc-wt/1JG6J4P; scope: crates/clocx/**, docs/clocx.md, changelog.d/**; ttl 7200s"
+at = "2026-10-04T01:40:07Z"
+actor = "lognd"
+rev = 1
