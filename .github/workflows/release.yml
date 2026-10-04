@@ -6,7 +6,8 @@ name: Release
 #   2. build: archives and SHA-256 checksums for five targets (Linux builds
 #      are static musl binaries, so they run on any distribution);
 #   3. github-release: a GitHub release with the archives, notes taken from
-#      the CHANGELOG.md section of the version;
+#      the CHANGELOG.md section of the version (written by `frob release
+#      cut` as "## X.Y.Z - date", or by hand as "## [X.Y.Z] - date");
 #   4. crates-io: `cargo publish`, after the GitHub release exists;
 #   5. wheels and sdist: PyPI wheels that carry the binary (maturin,
 #      `bindings = "bin"`; manylinux and musllinux, macOS, Windows), the
@@ -76,9 +77,16 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           # Wait up to 40 minutes for a CI run of this exact commit to finish.
-          for _ in $(seq 1 80); do
+          # `frob release cut --push` pushes the release commit and its tag
+          # together, so allow 5 minutes for that commit's CI run to appear.
+          for i in $(seq 1 80); do
             runs=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=20" --jq '.workflow_runs')
             if [ "$(echo "$runs" | jq 'length')" = "0" ]; then
+              if [ "$i" -le 10 ]; then
+                echo "no CI run for $SHA yet; waiting for it to start"
+                sleep 30
+                continue
+              fi
               echo "::error::no CI run exists for $SHA; push the commit to master and let CI finish first"; exit 1
             fi
             pending=$(echo "$runs" | jq '[.[] | select(.status != "completed")] | length')
@@ -212,10 +220,13 @@ jobs:
         env:
           VERSION: ${{ needs.plan.outputs.version }}
         run: |
-          # The section from "## [VERSION]" up to the next "## [" heading.
+          # The section headed "## X.Y.Z - date" (frob release cut) or
+          # "## [X.Y.Z] - date" (by hand), up to the next "## " heading,
+          # without frob's integrity marker.
           awk -v v="$VERSION" '
-            index($0, "## [" v "]") == 1 { on = 1; next }
-            on && /^## \[/ { exit }
+            index($0, "## [" v "]") == 1 || $0 == "## " v || index($0, "## " v " ") == 1 { on = 1; next }
+            on && /^## / { exit }
+            on && /^<!-- frob-section: / { next }
             on { print }
           ' CHANGELOG.md > notes.md
           if [ ! -s notes.md ]; then

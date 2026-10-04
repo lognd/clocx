@@ -1,1 +1,5 @@
 tickets/**/ticket.md merge=frob-ledger
+
+# Every text file is LF in the index and in every checkout, whatever
+# core.autocrlf says; otherwise frob's checks and git disagree about edits.
+* text=auto eol=lf

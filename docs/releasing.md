@@ -1,8 +1,8 @@
 # Releasing clocx
 
 How-to for maintainers: cut a version and publish it to GitHub releases,
-crates.io and PyPI. Pushing a tag does everything after step 4; the workflow
-is `.github/workflows/release.yml`. Release tags are `clocx-vX.Y.Z` (also
+crates.io and PyPI. Pushing the release tag does the rest; the workflow is
+`.github/workflows/release.yml`. Release tags are `clocx-vX.Y.Z` (also
 `[release] tag` in `frob.toml`); `v0.1.0` and `v0.1.1` predate that.
 
 ## One-time setup
@@ -25,28 +25,49 @@ is `.github/workflows/release.yml`. Release tags are `clocx-vX.Y.Z` (also
 
 ## Cutting version X.Y.Z
 
-1. Compile the fragments in `changelog.d/` into a new section of
-   `CHANGELOG.md`, directly under `## [Unreleased]`:
+frob does the bookkeeping: it compiles the changelog, bumps the version,
+commits, tags and records the cut in one step.
 
-       ## [X.Y.Z] - YYYY-MM-DD
+1. Land everything that ships, push `master`, and let CI finish: `cut`
+   refuses a base commit whose CI is not green.
+2. Open the milestone and check readiness:
 
-       ### Added
-       - ...
+       frob milestone new X.Y.Z --goal "<what this release is for>"
+       frob release status X.Y.Z
 
-   Group entries by the fragment kind in the file name (`added`,
-   `changed`, `fixed`, `removed`, `deprecated`, `security`), then delete
-   the compiled fragments. The release notes are taken from this section,
-   and the release fails without it.
-2. Set `version = "X.Y.Z"` under `[workspace.package]` in `Cargo.toml` and
-   run `cargo check` so `Cargo.lock` follows.
-3. Commit as `chore(release): X.Y.Z`, push to `master`, and let CI finish.
-4. Tag the commit and push the tag:
+   `status` lists blockers (CI, open tickets, changelog fragments) and
+   previews the changelog section.
+3. Cut and push:
 
-       git tag -a clocx-vX.Y.Z -m "clocx X.Y.Z"
-       git push origin clocx-vX.Y.Z
+       frob release cut X.Y.Z --push
 
-   Then record the cut in the ledger with
-   `frob release adopt X.Y.Z --reason "tagged by the release how-to"`.
+   This compiles the fragments in `changelog.d/` into a `## X.Y.Z - date`
+   section of `CHANGELOG.md` (the release notes come from it) and deletes
+   them, sets the workspace version in `Cargo.toml` and `Cargo.lock`,
+   makes one `chore(release): cut X.Y.Z` commit on `master`, tags it
+   `clocx-vX.Y.Z` (`[release] tag` in `frob.toml`), records the cut in the
+   ticket ledger, and pushes the commit, the tag and the ledger. The tag
+   starts the release workflow, which waits for CI on the release commit.
+
+Checkouts are LF whatever `core.autocrlf` says (`.gitattributes`);
+without that, `cut` saw its own edits as local edits under
+`core.autocrlf=true`.
+
+### By hand
+
+If frob cannot cut (or for a version it should not touch): compile the
+fragments into a `## [X.Y.Z] - YYYY-MM-DD` section of `CHANGELOG.md`
+(group by the fragment kind in the file name, then delete the fragments),
+set `version = "X.Y.Z"` under `[workspace.package]` in `Cargo.toml` and run
+`cargo check`, commit as `chore(release): X.Y.Z`, push and let CI finish,
+then tag and push the tag:
+
+    git tag -a clocx-vX.Y.Z -m "clocx X.Y.Z"
+    git push origin clocx-vX.Y.Z
+
+and record the cut with
+`frob release adopt X.Y.Z --reason "tagged by hand"`. The workflow reads
+release notes from either heading style.
 
 The release workflow then:
 
