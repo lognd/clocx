@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "ratio"
+committed = 3
+done = 3
+at = "2026-10-04T01:38:27Z"
+actor = "lognd"
+rev = 1
