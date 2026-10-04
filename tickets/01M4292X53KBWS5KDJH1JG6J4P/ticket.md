@@ -8,12 +8,12 @@ points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:40:03Z"
-updated = "2026-10-04T01:40:07Z"
+updated = "2026-10-04T01:45:36Z"
 scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a shallow clone with history present past its boundary, When clocx reports activity, Then the Activity section is available, counts the commits whose parents are present, leaves out the boundary commits, and logs no warning"
-bound = false
+bound = true
 
 [[acceptance]]
 text = 'Given a shallow clone, When the report is rendered as text or JSON, Then it says the clone is shallow (a note under the activity table, and "shallow": true in JSON), and a full clone says nothing and has "shallow": false'
