@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:29:49Z"
+digest = "bd189bbd8efbc9f39907d268fe2e1e9f387c0e74ac51898f34e57849b249aca0"
+provider = "file"
+ref = ".github/workflows/release.yml"
+size = 16509
+status = "measured"
+at = "2026-10-04T01:29:49Z"
+actor = "lognd"
+rev = 1
