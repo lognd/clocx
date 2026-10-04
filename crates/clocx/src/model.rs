@@ -96,6 +96,8 @@ pub struct Activity {
     pub directories: Vec<DirActivity>,
     /// Branch tips the history walk started from.
     pub branches: u64,
+    /// Whether the repository is a shallow clone: history past its boundary is missing, and the boundary commits are left out.
+    pub shallow: bool,
     /// Time of the newest non-merge commit seen.
     pub last_commit_at: Option<Timestamp>,
 }

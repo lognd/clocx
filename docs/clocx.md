@@ -117,6 +117,14 @@ activity in the last 30 days, showing `+added -removed` per window and a
 7 and 30 days, so current work is on top. Rows with activity in the last
 day are never folded away.
 
+In a shallow clone (such as a CI checkout, depth 1 by default) the history
+stops at the clone's boundary. clocx counts the commits whose parent is
+present and leaves out the boundary commits themselves: their diff is
+unknown, and diffing against nothing would count the whole tree as added.
+A note under the Activity table says `Shallow clone: only the fetched
+history counts.`, and JSON has `"shallow": true`. A depth-1 clone has no
+countable commits, so its windows are empty.
+
 Each commit's per-file result is cached by commit id in `commits.json`
 (commits never change), pruned to the 30-day window. Outside a git
 repository, or when history cannot be read, the section says it is
@@ -197,7 +205,8 @@ followed by a newline. It is never colored, whatever `--color` says.
   `{"status": "ok", ...}` with `depth`, `windows` (each `label`,
   `seconds`, `churn` with `added`, `removed`, `files`, `commits`, and
   `trend`, oldest bucket first), `directories` (each `name`, `windows`
-  as churn in the same order, `trend` over 7 days), `branches` and
+  as churn in the same order, `trend` over 7 days), `branches`,
+  `shallow` (whether the repository is a shallow clone) and
   `last_commit_at`.
 - `worktrees`: unavailable, or `{"status": "ok", "base": ..., "worktrees":
   [...]}` with each worktree's `name`, `path`, `current`, `branch`,

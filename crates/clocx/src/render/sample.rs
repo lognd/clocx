@@ -101,6 +101,7 @@ fn activity() -> Activity {
             },
         ],
         branches: 3,
+        shallow: false,
         last_commit_at: Some("2026-10-03T11:55:00Z".parse().unwrap()),
     }
 }

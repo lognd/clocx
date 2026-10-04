@@ -53,6 +53,17 @@ pub struct CommitChurn {
 /// Commit id (hex) to its churn.
 pub type CommitCache = HashMap<String, CommitChurn>;
 
+/// What one history walk found.
+#[derive(Debug, Clone, Default)]
+pub struct History {
+    /// Churn of every non-merge commit in the window whose diff is known.
+    pub commits: Vec<CommitChurn>,
+    /// Branch tips the walk started from.
+    pub branches: u64,
+    /// Whether the repository is a shallow clone; its boundary commits are left out.
+    pub shallow: bool,
+}
+
 /// Every local branch tip plus HEAD (which may be detached), deduplicated.
 fn tips(repo: &gix::Repository) -> Result<Vec<gix::ObjectId>, GitError> {
     let mut tips = HashSet::new();
@@ -129,6 +140,9 @@ fn diff_commit(
 ///
 /// The cache is pruned to the commits seen, so it stays bounded by the window.
 /// `progress` advances once per commit read; the total is not known up front.
+/// In a shallow clone the boundary commits (whose parents are missing) are
+/// left out: their diff is unknown, and diffing against the empty tree would
+/// count the whole tree as added.
 ///
 /// # Errors
 /// Returns [`GitError::Read`] when references, commits or trees cannot be read.
@@ -137,14 +151,24 @@ pub fn walk(
     now: Timestamp,
     cache: &mut CommitCache,
     progress: &Progress,
-) -> Result<(Vec<CommitChurn>, u64), GitError> {
+) -> Result<History, GitError> {
     progress.begin(Phase::History, None);
+    let boundary: HashSet<gix::ObjectId> = repo
+        .shallow_commits()
+        .map_err(read_err("reading the shallow boundary"))?
+        .map(|c| c.iter().copied().collect())
+        .unwrap_or_default();
+    let shallow = !boundary.is_empty();
     let tips = tips(repo)?;
     let branches = tips.len() as u64;
     if tips.is_empty() {
         debug!("no commits yet");
         cache.clear();
-        return Ok((Vec::new(), 0));
+        return Ok(History {
+            commits: Vec::new(),
+            branches: 0,
+            shallow,
+        });
     }
     let longest = WINDOWS[WINDOWS.len() - 1].1;
     let cutoff = now.as_second() - longest;
@@ -160,11 +184,16 @@ pub fn walk(
         .diff_resource_cache_for_tree_diff()
         .map_err(read_err("preparing diff cache"))?;
     let mut fresh = CommitCache::new();
-    let (mut hits, mut diffed) = (0u64, 0u64);
+    let (mut hits, mut diffed, mut cut) = (0u64, 0u64, 0u64);
     for info in walk {
         let info = info.map_err(read_err("walking history"))?;
         progress.tick();
         if info.parent_ids.len() > 1 {
+            continue;
+        }
+        if boundary.contains(&info.id) {
+            debug!(commit = %info.id, "shallow boundary; parent missing, left out");
+            cut += 1;
             continue;
         }
         let key = info.id.to_hex().to_string();
@@ -189,9 +218,13 @@ pub fn walk(
     *cache = fresh;
     info!(
         commits = cache.len(),
-        hits, diffed, branches, "history walked"
+        hits, diffed, branches, shallow, cut, "history walked"
     );
-    Ok((cache.values().cloned().collect(), branches))
+    Ok(History {
+        commits: cache.values().cloned().collect(),
+        branches,
+        shallow,
+    })
 }
 
 /// Whether a repository path is source code by the same rule as the totals (tokei knows its language).
@@ -217,13 +250,8 @@ impl DirAcc<'_> {
 }
 
 /// Buckets commits into the windows and per-directory rows, keeping only paths under the report root.
-pub fn summarise(
-    repo: &Repo,
-    commits: &[CommitChurn],
-    depth: u16,
-    now: Timestamp,
-    branches: u64,
-) -> Activity {
+pub fn summarise(repo: &Repo, history: &History, depth: u16, now: Timestamp) -> Activity {
+    let commits = &history.commits;
     let now_s = now.as_second();
     let mut windows: Vec<ActivityWindow> = WINDOWS
         .iter()
@@ -315,7 +343,8 @@ pub fn summarise(
         depth,
         windows,
         directories,
-        branches,
+        branches: history.branches,
+        shallow: history.shallow,
         last_commit_at: last.and_then(|s| Timestamp::from_second(s).ok()),
     }
 }
@@ -331,8 +360,8 @@ pub fn collect(
     cache: &mut CommitCache,
     progress: &Progress,
 ) -> Result<Activity, GitError> {
-    let (commits, branches) = walk(&repo.repo, now, cache, progress)?;
-    Ok(summarise(repo, &commits, depth, now, branches))
+    let history = walk(&repo.repo, now, cache, progress)?;
+    Ok(summarise(repo, &history, depth, now))
 }
 
 #[cfg(test)]
@@ -550,6 +579,75 @@ mod tests {
         assert_eq!(window(&a, "7d").churn.files, 1);
         assert_eq!(a.directories.len(), 1);
         assert_eq!(a.directories[0].name, ".");
+    }
+
+    /// A `--depth N` clone of `t` in a new temporary directory.
+    fn shallow_clone(t: &TestRepo, depth: u32) -> tempfile::TempDir {
+        let dest = tempfile::tempdir().unwrap();
+        let url = format!("file://{}", t.path().display());
+        let depth = depth.to_string();
+        t.git_at(
+            dest.path(),
+            &["clone", "-q", "--depth", &depth, &url, "."],
+            None,
+        );
+        dest
+    }
+
+    #[test]
+    fn a_shallow_clone_counts_the_history_it_has() {
+        let t = history();
+        let dest = shallow_clone(&t, 2);
+        let repo = crate::git::Repo::discover(&dest.path().canonicalize().unwrap()).unwrap();
+        let a = collect(
+            &repo,
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
+        assert!(a.shallow);
+        // "recent" diffs against "mid", which is present; "mid" is the boundary and left out.
+        let month = window(&a, "30d");
+        assert_eq!(month.churn.commits, 1, "{month:?}");
+        assert_eq!((month.churn.added, month.churn.removed), (2, 1));
+        assert!(
+            a.directories.iter().all(|d| d.name != "docs"),
+            "boundary diff left out"
+        );
+    }
+
+    #[test]
+    fn a_depth_one_clone_has_no_countable_commits() {
+        let t = history();
+        let dest = shallow_clone(&t, 1);
+        let repo = crate::git::Repo::discover(&dest.path().canonicalize().unwrap()).unwrap();
+        let a = collect(
+            &repo,
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
+        assert!(a.shallow);
+        assert_eq!(window(&a, "30d").churn.commits, 0);
+        assert!(a.last_commit_at.is_none());
+    }
+
+    #[test]
+    fn a_full_clone_is_not_shallow() {
+        let t = history();
+        let a = collect(
+            &t.open(),
+            1,
+            now(),
+            &mut CommitCache::new(),
+            &Progress::default(),
+        )
+        .unwrap();
+        assert!(!a.shallow);
     }
 
     #[test]

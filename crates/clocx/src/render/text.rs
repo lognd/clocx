@@ -111,6 +111,19 @@ mod tests {
     }
 
     #[test]
+    fn a_shallow_clone_is_named_under_the_activity_table() {
+        let note = "Shallow clone: only the fetched history counts.";
+        assert!(!plain(&sample::report()).contains(note));
+        let mut r = sample::report();
+        if let crate::model::Section::Ok(a) = &mut r.activity {
+            a.shallow = true;
+        }
+        let out = plain(&r);
+        let (activity, _) = out.split_once("Where work is happening").unwrap();
+        assert!(activity.contains(note), "{activity}");
+    }
+
+    #[test]
     fn unavailable_activity_says_why() {
         let mut r = sample::report();
         r.activity = Section::Unavailable {

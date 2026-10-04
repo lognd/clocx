@@ -57,6 +57,16 @@ mod tests {
     }
 
     #[test]
+    fn activity_says_whether_the_clone_is_shallow() {
+        let mut r = sample::report();
+        assert_eq!(parsed(&r)["activity"]["shallow"], false);
+        if let crate::model::Section::Ok(a) = &mut r.activity {
+            a.shallow = true;
+        }
+        assert_eq!(parsed(&r)["activity"]["shallow"], true);
+    }
+
+    #[test]
     fn missing_baseline_is_null_not_absent() {
         let mut r = sample::report();
         r.totals.baseline_at = None;

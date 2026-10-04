@@ -248,10 +248,15 @@ fn activity(
         |t| format!("last commit {}", format::age(t, report.generated_at)),
     );
     let plural = if a.branches == 1 { "" } else { "es" };
-    let activity = vec![
+    let mut activity = vec![
         Part::Table(windows),
         Part::Note(format!("Across {} branch{plural}; {last}.", a.branches)),
     ];
+    if a.shallow {
+        activity.push(Part::Note(
+            "Shallow clone: only the fetched history counts.".to_owned(),
+        ));
+    }
 
     if a.directories.is_empty() {
         return (activity, Vec::new());
