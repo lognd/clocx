@@ -2,13 +2,14 @@
 id = "01M429J8AXJ71YBTA4JBZA22SW"
 title = "Release with frob release cut"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:48:26Z"
-updated = "2026-10-04T01:49:55Z"
+updated = "2026-10-04T01:49:56Z"
 scope = [".github/**", "docs/releasing.md", ".gitattributes", "changelog.d/**"]
 
 [[acceptance]]

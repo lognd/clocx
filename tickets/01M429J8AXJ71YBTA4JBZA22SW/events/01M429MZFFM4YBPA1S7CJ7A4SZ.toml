@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "maintainer release tooling only (workflow notes parsing, CI grace, LF checkouts, how-to); nothing a clocx user sees"
+at = "2026-10-04T01:49:56Z"
+actor = "lognd"
+rev = 1
