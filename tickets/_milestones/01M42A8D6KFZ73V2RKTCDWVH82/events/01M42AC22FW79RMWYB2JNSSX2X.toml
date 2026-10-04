@@ -1,0 +1,7 @@
+kind = "transition"
+from = "open"
+to = "released"
+reason = "release cut 0.2.1"
+at = "2026-10-04T02:02:32Z"
+actor = "lognd"
+rev = 1
