@@ -1,0 +1,1 @@
+clocx is on PyPI as prebuilt binary wheels (Linux manylinux and musllinux, macOS, Windows): `uv tool install clocx`, `uvx clocx` or `pipx install clocx` installs it without a Rust toolchain. Release tags are now `clocx-vX.Y.Z`.

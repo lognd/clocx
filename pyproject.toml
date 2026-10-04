@@ -1,0 +1,44 @@
+# PyPI packaging: wheels that carry the prebuilt clocx binary, nothing Python.
+# `uvx clocx`, `uv tool install clocx` or `pipx install clocx` then work
+# without a Rust toolchain. The version comes from crates/clocx/Cargo.toml
+# (the workspace version), so PyPI and crates.io always agree.
+# Built and published by .github/workflows/release.yml; see docs/releasing.md.
+
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "clocx"
+dynamic = ["version"]
+description = "Count lines of code and watch where work is happening, across git worktrees"
+readme = "README.md"
+license = "GPL-2.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "Logan Dapp", email = "logan@logand.app" }]
+requires-python = ">=3.8"
+keywords = ["cloc", "loc", "git", "worktree", "statistics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Rust",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/lognd/clocx"
+Documentation = "https://github.com/lognd/clocx/blob/master/docs/clocx.md"
+Changelog = "https://github.com/lognd/clocx/blob/master/CHANGELOG.md"
+Issues = "https://github.com/lognd/clocx/issues"
+
+[tool.maturin]
+bindings = "bin"
+manifest-path = "crates/clocx/Cargo.toml"
+# The binary is all a wheel holds; keep the sdist to what building it needs.
+include = [{ path = "rust-toolchain.toml", format = "sdist" }]
+strip = true

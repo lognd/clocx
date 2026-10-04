@@ -1,20 +1,25 @@
 name: Release
 
-# Pushing a tag vX.Y.Z releases clocx X.Y.Z:
+# Pushing a tag clocx-vX.Y.Z releases clocx X.Y.Z:
 #   1. plan: the tag matches the crate version, and CI passed on the tagged
 #      commit (waits for a running CI, refuses a red or missing one);
 #   2. build: archives and SHA-256 checksums for five targets (Linux builds
 #      are static musl binaries, so they run on any distribution);
 #   3. github-release: a GitHub release with the archives, notes taken from
 #      the CHANGELOG.md section of the version;
-#   4. crates-io: `cargo publish`, after the GitHub release exists.
+#   4. crates-io: `cargo publish`, after the GitHub release exists;
+#   5. wheels and sdist: PyPI wheels that carry the binary (maturin,
+#      `bindings = "bin"`; manylinux and musllinux, macOS, Windows), the
+#      native ones smoke-tested, and a source distribution;
+#   6. pypi: upload the wheels and sdist by trusted publishing, after the
+#      GitHub release exists.
 # Running it by hand (workflow_dispatch) is a dry run: the CI gate, builds,
-# smoke tests and archives, but no GitHub release and no publish.
-# See docs/releasing.md for the steps and the one-time crates.io setup.
+# smoke tests, archives and wheels, but no GitHub release and no publish.
+# See docs/releasing.md for the steps and the one-time registry setup.
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["clocx-v*"]
   workflow_dispatch:
 
 permissions: {}
@@ -55,9 +60,9 @@ jobs:
             echo "version=$crate" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          version="${TAG#v}"
-          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
-            echo "::error::tag $TAG is not vMAJOR.MINOR.PATCH"; exit 1
+          version="${TAG#clocx-v}"
+          if [ "$version" = "$TAG" ] || ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag $TAG is not clocx-vMAJOR.MINOR.PATCH"; exit 1
           fi
           if [ "$crate" != "$version" ]; then
             echo "::error::tag version $version differs from the clocx crate version $crate"; exit 1
@@ -270,3 +275,149 @@ jobs:
             echo "::error::CARGO_REGISTRY_TOKEN is not set in the crates-io environment (docs/releasing.md)"; exit 1
           fi
           cargo publish --locked -p clocx
+
+  wheels:
+    name: wheel (${{ matrix.name }})
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # manylinux wheels build in the maturin manylinux containers, so
+          # they run on old glibc; musllinux wheels serve Alpine and friends.
+          - name: manylinux x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            manylinux: auto
+            smoke: true
+          - name: manylinux aarch64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            manylinux: auto
+            smoke: true
+          # pip on a glibc runner will not install a musllinux wheel.
+          - name: musllinux x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            manylinux: musllinux_1_2
+            smoke: false
+          - name: musllinux aarch64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            manylinux: musllinux_1_2
+            smoke: false
+          - name: macOS arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            manylinux: "off"
+            smoke: true
+          # Cross-built on the arm64 macOS runner, which cannot run it.
+          - name: macOS x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            manylinux: "off"
+            smoke: false
+          - name: Windows x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            manylinux: "off"
+            smoke: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Build the wheel
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          maturin-version: v1.15.0
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --locked --out dist
+      - name: Smoke (the installed wheel runs and reports the tagged version)
+        if: matrix.smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          python -m venv smoke
+          case "$RUNNER_OS" in Windows) bin=smoke/Scripts ;; *) bin=smoke/bin ;; esac
+          "$bin/python" -m pip install --no-index --find-links dist clocx
+          out=$("$bin/clocx" --version)
+          echo "$out"
+          [ "$out" = "clocx $VERSION" ]
+          "$bin/clocx" --no-cache --no-progress --color never . > /dev/null
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheel-${{ matrix.target }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  sdist:
+    name: sdist
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the source distribution
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          maturin-version: v1.15.0
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  pypi:
+    name: PyPI
+    if: github.event_name == 'push'
+    needs: [plan, github-release, wheels, sdist]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Trusted publishing: PyPI trusts this workflow in the `pypi`
+    # environment (docs/releasing.md); no token is stored.
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: wheel-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdist
+          path: dist
+      - name: Every file is this version
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          ls -l dist
+          # PyPI spells pre-releases the PEP 440 way: 0.3.0-rc.1 is 0.3.0rc1.
+          py=$(printf '%s' "$VERSION" | sed -E 's/-(alpha|a)\.?/a/; s/-(beta|b)\.?/b/; s/-rc\.?/rc/')
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              "clocx-$py-"*.whl|"clocx-$py.tar.gz") ;;
+              *) echo "::error::$f is not clocx $VERSION"; exit 1 ;;
+            esac
+          done
+      # Re-runs are safe: files already on PyPI are skipped.
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          skip-existing: true

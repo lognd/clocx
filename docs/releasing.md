@@ -1,8 +1,9 @@
 # Releasing clocx
 
-How-to for maintainers: cut a version and publish it to GitHub releases and
-crates.io. Pushing a tag does everything after step 4; the workflow is
-`.github/workflows/release.yml`.
+How-to for maintainers: cut a version and publish it to GitHub releases,
+crates.io and PyPI. Pushing a tag does everything after step 4; the workflow
+is `.github/workflows/release.yml`. Release tags are `clocx-vX.Y.Z` (also
+`[release] tag` in `frob.toml`); `v0.1.0` and `v0.1.1` predate that.
 
 ## One-time setup
 
@@ -16,6 +17,11 @@ crates.io. Pushing a tag does everything after step 4; the workflow is
    the token: add this repository and `release.yml` as a trusted publisher
    on the crate's settings page, then switch the `crates-io` job to
    `rust-lang/crates-io-auth-action` and delete the secret.
+4. On pypi.org, add a trusted publisher for the project `clocx` (a
+   pending publisher before the first upload): owner `lognd`, repository
+   `clocx`, workflow `release.yml`, environment `pypi`. In the GitHub
+   repository, create the environment `pypi` (no secrets needed; a
+   required reviewer is optional, as for `crates-io`).
 
 ## Cutting version X.Y.Z
 
@@ -36,8 +42,11 @@ crates.io. Pushing a tag does everything after step 4; the workflow is
 3. Commit as `chore(release): X.Y.Z`, push to `master`, and let CI finish.
 4. Tag the commit and push the tag:
 
-       git tag -a vX.Y.Z -m "clocx X.Y.Z"
-       git push origin vX.Y.Z
+       git tag -a clocx-vX.Y.Z -m "clocx X.Y.Z"
+       git push origin clocx-vX.Y.Z
+
+   Then record the cut in the ledger with
+   `frob release adopt X.Y.Z --reason "tagged by the release how-to"`.
 
 The release workflow then:
 
@@ -51,22 +60,29 @@ The release workflow then:
   reference (`clocx.md`);
 - creates the GitHub release `vX.Y.Z` with those archives;
 - publishes the crate to crates.io (skipped if that version is already
-  there, so a re-run is safe).
+  there, so a re-run is safe);
+- builds PyPI wheels with maturin (`pyproject.toml`, `bindings = "bin"`:
+  each wheel holds just the binary): manylinux and musllinux for x86_64
+  and arm64, macOS arm64 and x86_64, Windows x86_64, plus an sdist; installs
+  and runs each wheel its runner can, and uploads them all to PyPI by
+  trusted publishing (files already there are skipped). The PyPI version is
+  the crate version, spelled the PEP 440 way for pre-releases
+  (`0.3.0-rc.1` is `0.3.0rc1`).
 
-A tag with a pre-release suffix (`v0.2.0-rc.1`) makes a GitHub
+A tag with a pre-release suffix (`clocx-v0.3.0-rc.1`) makes a GitHub
 pre-release; crates.io treats the version as a pre-release too.
 
 ## Dry run
 
 Run the Release workflow by hand from the Actions tab (Run workflow, on
 `master`) to exercise everything short of publishing: the CI gate, the
-five builds with their smoke tests, and the archives (downloadable from
-the run). It creates no release and publishes nothing.
+five builds with their smoke tests, the archives, and the wheels and sdist
+(all downloadable from the run). It creates no release and publishes nothing.
 
 ## If a release fails
 
 Re-run the failed jobs from the Actions tab: every job is safe to repeat
-(the release job uploads missing assets to an existing release, and the
-publish job skips a version crates.io already has). A version that reached
-crates.io cannot be replaced, only yanked; fix forward with a new patch
-version.
+(the release job uploads missing assets to an existing release, the
+crates.io job skips a version crates.io already has, and the PyPI job skips
+files PyPI already has). A version that reached crates.io or PyPI cannot be
+replaced, only yanked; fix forward with a new patch version.

@@ -13,6 +13,7 @@ at a glance.
 
 [![CI](https://github.com/lognd/clocx/actions/workflows/ci.yml/badge.svg)](https://github.com/lognd/clocx/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/clocx.svg)](https://crates.io/crates/clocx)
+[![PyPI](https://img.shields.io/pypi/v/clocx.svg)](https://pypi.org/project/clocx/)
 [![GitHub release](https://img.shields.io/github/v/release/lognd/clocx?include_prereleases&sort=semver)](https://github.com/lognd/clocx/releases)
 [![License: GPL-2.0](https://img.shields.io/badge/license-GPL--2.0-blue.svg)](#license)
 [![MSRV 1.88](https://img.shields.io/badge/MSRV-1.88-orange.svg)](#versioning-and-compatibility)
@@ -22,6 +23,14 @@ at a glance.
 
 ```bash
 cargo install clocx
+```
+
+Or, without a Rust toolchain, the prebuilt binary from PyPI (the wheel
+holds only the `clocx` executable):
+
+```bash
+uv tool install clocx     # or: pipx install clocx
+uvx clocx                 # run once without installing
 ```
 
 Prebuilt binaries for Linux (x86_64, arm64; static, any distribution),
