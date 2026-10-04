@@ -1,0 +1,13 @@
+kind = "create"
+title = "Activity is unavailable in a shallow clone"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M422757XQAA9PJ8601NCEV1X"
+scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**"]
+acceptance = ["Given a shallow clone with history present past its boundary, When clocx reports activity, Then the Activity section is available, counts the commits whose parents are present, leaves out the boundary commits, and logs no warning", 'Given a shallow clone, When the report is rendered as text or JSON, Then it says the clone is shallow (a note under the activity table, and "shallow": true in JSON), and a full clone says nothing and has "shallow": false']
+body = "In a shallow clone (CI checkouts are depth 1 by default) the history walk reaches a boundary commit whose parent object is missing; diffing it fails and the whole Activity section becomes unavailable with a WARN on stderr. Count the history that is present instead: skip boundary commits (their diff cannot be known; diffing against the empty tree would count the whole tree as added) and say in the report that the clone is shallow."
+at = "2026-10-04T01:40:03Z"
+actor = "lognd"
+rev = 1
