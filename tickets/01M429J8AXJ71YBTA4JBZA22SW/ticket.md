@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a release commit and tag pushed together, When the plan job finds no CI run for the commit yet, Then it waits a few minutes for one to appear before failing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given core.autocrlf=true, When frob release cut runs in a fresh checkout, Then it commits and tags without reporting its own edits as local edits"
