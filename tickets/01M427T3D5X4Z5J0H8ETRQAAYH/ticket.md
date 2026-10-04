@@ -8,7 +8,7 @@ points = 3
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:17:46Z"
-updated = "2026-10-04T01:29:41Z"
+updated = "2026-10-04T01:29:49Z"
 persona = "clocx user with Python but no Rust toolchain"
 capability = "uvx clocx / uv tool install clocx / pipx install clocx"
 outcome_text = "I get a prebuilt clocx without compiling it"
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pushed tag vX.Y.Z, When the release workflow runs, Then it builds wheels for every release platform and an sdist, smoke-tests the native wheels, and publishes them to PyPI by trusted publishing, skipping files already there"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/releasing.md and README.md, When a maintainer or user reads them, Then they describe the one-time PyPI setup and the uv/pipx install"

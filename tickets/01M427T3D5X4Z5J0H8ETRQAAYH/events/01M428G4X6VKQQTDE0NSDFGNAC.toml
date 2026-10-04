@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Release dry run https://github.com/lognd/clocx/actions/runs/37167844722 is green: 7 wheels (manylinux2014 and musllinux_1_2 for x86_64 and aarch64, macOS 10.12 x86_64 and 11.0 arm64, win_amd64) and an sdist built; native wheels installed and smoke-tested; publish jobs skipped as a dry run. Local maturin 1.15.0 build installs and prints clocx 0.2.0. The PyPI upload itself is proven by the clocx-v0.2.0 release run, linked here when it finishes."
+at = "2026-10-04T01:29:49Z"
+actor = "lognd"
+rev = 1
