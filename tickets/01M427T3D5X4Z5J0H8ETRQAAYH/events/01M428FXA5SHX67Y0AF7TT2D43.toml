@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T01:29:41Z"
+digest = "59452ea17566b5a93b4ee89ba20555d27e60987d9dae6e4a2f4e4369dfbba4f7"
+provider = "file"
+ref = "pyproject.toml"
+size = 1635
+status = "measured"
+at = "2026-10-04T01:29:41Z"
+actor = "lognd"
+rev = 1
