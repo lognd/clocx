@@ -8,6 +8,10 @@ name: CI
 on:
   push:
     branches: ["**"]
+    # `frob release cut --push` pushes ledger commits after the release
+    # commit, so the branch head is not the tagged commit; the tag push
+    # gives the release commit its own run, which the release waits for.
+    tags: ["clocx-v*"]
   pull_request:
   workflow_dispatch:
 

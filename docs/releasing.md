@@ -47,7 +47,8 @@ commits, tags and records the cut in one step.
    makes one `chore(release): cut X.Y.Z` commit on `master`, tags it
    `clocx-vX.Y.Z` (`[release] tag` in `frob.toml`), records the cut in the
    ticket ledger, and pushes the commit, the tag and the ledger. The tag
-   starts the release workflow, which waits for CI on the release commit.
+   starts the release workflow, and CI on the tagged commit (the branch
+   head is a ledger commit by then); the release waits for that CI.
 
 Checkouts are LF whatever `core.autocrlf` says (`.gitattributes`);
 without that, `cut` saw its own edits as local edits under
