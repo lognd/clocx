@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given core.autocrlf=true, When frob release cut runs in a fresh checkout, Then it commits and tags without reporting its own edits as local edits"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/releasing.md, When a maintainer cuts X.Y.Z, Then the steps are frob milestone new, frob release status and frob release cut --push"

@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T01:49:36Z"
+digest = "892e44b8117cbd1e8507b3b5d227463f92d539e551565402d1eea6df138a1d98"
+provider = "file"
+ref = ".gitattributes"
+size = 209
+status = "measured"
+at = "2026-10-04T01:49:36Z"
+actor = "lognd"
+rev = 1
