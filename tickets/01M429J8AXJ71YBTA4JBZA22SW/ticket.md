@@ -8,7 +8,7 @@ points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:48:26Z"
-updated = "2026-10-04T01:49:36Z"
+updated = "2026-10-04T01:49:37Z"
 scope = [".github/**", "docs/releasing.md", ".gitattributes", "changelog.d/**"]
 
 [[acceptance]]
