@@ -1,0 +1,7 @@
+kind = "create"
+object = "milestone"
+version = "0.1.0"
+goal = "Adopted release 0.1.0"
+at = "2026-10-04T00:59:48Z"
+actor = "lognd"
+rev = 1
