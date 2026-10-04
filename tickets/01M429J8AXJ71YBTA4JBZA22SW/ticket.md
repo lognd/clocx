@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given docs/releasing.md, When a maintainer cuts X.Y.Z, Then the steps are frob milestone new, frob release status and frob release cut --push"
-bound = false
+bound = true
 +++
 
 Releases are tagged by hand and adopted because the workflow reads notes only from '## [X.Y.Z]' headings, while frob release cut writes '## X.Y.Z - date' sections (with #### kinds and an integrity marker). Make the workflow read both styles, give the plan job a grace period for a CI run that has not started yet (cut --push pushes the release commit and the tag together), pin text files to LF so frob's checks agree with git under core.autocrlf=true (otherwise cut trips over its own edits), and document frob release cut as the way to release.
