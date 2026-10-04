@@ -9,6 +9,12 @@ Changes not yet released are kept as one fragment per change in
 [`changelog.d/`](changelog.d/); they are compiled into a section here when a
 version is cut (see [docs/releasing.md](docs/releasing.md)).
 
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- A progress line on stderr while a one-shot report is computed: phase, bar, done/total, rate and ETA, overwritten in place and erased before the report; `--no-progress` turns it off.
+
 ## [0.1.1] - 2026-10-03
 
 ### Fixed
