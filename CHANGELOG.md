@@ -13,6 +13,7 @@ version is cut (see [docs/releasing.md](docs/releasing.md)).
 
 ### Added
 
+- clocx is on PyPI as prebuilt binary wheels (Linux manylinux and musllinux, macOS, Windows): `uv tool install clocx`, `uvx clocx` or `pipx install clocx` installs it without a Rust toolchain. Release tags are now `clocx-vX.Y.Z`.
 - A progress line on stderr while a one-shot report is computed: phase, bar, done/total, rate and ETA, overwritten in place and erased before the report; `--no-progress` turns it off.
 
 ## [0.1.1] - 2026-10-03
