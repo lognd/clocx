@@ -24,7 +24,7 @@ bound = false
 
 [[acceptance]]
 text = "Given docs/releasing.md and README.md, When a maintainer or user reads them, Then they describe the one-time PyPI setup and the uv/pipx install"
-bound = false
+bound = true
 +++
 
 Package the clocx binary as wheels with maturin (bindings = bin), version taken from Cargo.toml. The release workflow builds manylinux and musllinux (x86_64, aarch64), macOS (x86_64, arm64) and Windows x86_64 wheels plus an sdist, smoke-tests the native ones, and publishes to PyPI by trusted publishing (environment pypi) after the GitHub release. The PyPI pending-publisher setup is an owner action.
