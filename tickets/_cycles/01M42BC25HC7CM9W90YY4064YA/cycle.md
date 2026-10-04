@@ -4,6 +4,7 @@ start = "2026-10-03"
 end = "2026-10-04"
 goal = "CI on release tags"
 state = "planned"
+tickets = ["01M42BBZH92CZ22CEYJAPPNKCW"]
 created = "2026-10-04T02:20:01Z"
 updated = "2026-10-04T02:20:01Z"
 ordinal = 7
