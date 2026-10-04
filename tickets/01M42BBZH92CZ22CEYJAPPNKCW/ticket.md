@@ -8,7 +8,7 @@ points = 1
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T02:19:58Z"
-updated = "2026-10-04T02:20:15Z"
+updated = "2026-10-04T02:20:21Z"
 scope = [".github/workflows/ci.yml", "docs/releasing.md"]
 
 [[acceptance]]
