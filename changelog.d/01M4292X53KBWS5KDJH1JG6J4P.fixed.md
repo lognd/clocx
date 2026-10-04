@@ -1,1 +1,0 @@
-In a shallow clone (such as a CI checkout) the Activity section counts the history that was fetched, with a note that the clone is shallow, instead of being unavailable with a warning on stderr; JSON gains `activity.shallow`.

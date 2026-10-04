@@ -9,6 +9,14 @@ Changes not yet released are kept as one fragment per change in
 [`changelog.d/`](changelog.d/); they are compiled into a section here when a
 version is cut (see [docs/releasing.md](docs/releasing.md)).
 
+## 0.2.1 - 2026-10-03
+
+#### Fixed
+
+- In a shallow clone (such as a CI checkout) the Activity section counts the history that was fetched, with a note that the clone is shallow, instead of being unavailable with a warning on stderr; JSON gains `activity.shallow`. (~1JG6J4P, 01M4292X53KBWS5KDJH1JG6J4P)
+
+<!-- frob-section: 0.2.1 blake3:da9c949c2ce0fe91320e9a7aab86c471c50079c41b827c211270bd17d6f37aa9 -->
+
 ## [0.2.0] - 2026-10-03
 
 ### Added
