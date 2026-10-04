@@ -8,7 +8,7 @@ points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:40:03Z"
-updated = "2026-10-04T01:45:39Z"
+updated = "2026-10-04T01:46:07Z"
 scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**"]
 
 [[acceptance]]
