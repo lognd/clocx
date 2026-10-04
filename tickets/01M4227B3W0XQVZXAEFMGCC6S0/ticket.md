@@ -2,7 +2,8 @@
 id = "01M4227B3W0XQVZXAEFMGCC6S0"
 title = "Live progress readout while a one-shot report is computed"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M422757XQAA9PJ8601NCEV1X"
