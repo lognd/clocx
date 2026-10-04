@@ -2,7 +2,8 @@
 id = "01M4292X53KBWS5KDJH1JG6J4P"
 title = "Activity is unavailable in a shallow clone"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
