@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Published: release run https://github.com/lognd/clocx/actions/runs/37168254284 uploaded 7 wheels and the sdist to https://pypi.org/project/clocx/0.2.0/ by trusted publishing; uvx --from clocx==0.2.0 clocx --version prints clocx 0.2.0."
+at = "2026-10-04T01:38:27Z"
+actor = "lognd"
+rev = 1
