@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Diagnosed on the 0.2.1 cut: the push ran CI only on ledger head a3d7557, none on tagged da2db11; CI was dispatched on the tag by hand (run 37169866789) and the release (run 37169837910) then passed. actionlint is clean on the new trigger; the next release proves it end to end (a test clocx-v* tag would also start the release workflow)."
+at = "2026-10-04T02:20:15Z"
+actor = "lognd"
+rev = 1
