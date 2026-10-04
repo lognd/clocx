@@ -2,13 +2,13 @@
 id = "01M4292X53KBWS5KDJH1JG6J4P"
 title = "Activity is unavailable in a shallow clone"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:40:03Z"
-updated = "2026-10-04T01:40:03Z"
+updated = "2026-10-04T01:40:07Z"
 scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**"]
 
 [[acceptance]]
