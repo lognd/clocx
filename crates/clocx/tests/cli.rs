@@ -35,14 +35,19 @@ fn report_into_a_pipe_is_plain_and_succeeds() {
 // frob:tests crates/clocx/src/render/progress.rs::start kind=integration
 #[test]
 fn no_progress_line_when_stderr_is_not_a_terminal() {
+    // Outside git, so no other diagnostic (a shallow CI clone warns about history) shares stderr.
+    let tree = tempfile::tempdir().unwrap();
+    std::fs::write(tree.path().join("a.rs"), "fn a() {}\n").unwrap();
+    let root = tree.path().to_str().unwrap();
     for args in [
-        vec![env!("CARGO_MANIFEST_DIR")],
-        vec!["--color", "always", env!("CARGO_MANIFEST_DIR")],
-        vec!["--no-progress", env!("CARGO_MANIFEST_DIR")],
+        vec![root],
+        vec!["--color", "always", root],
+        vec!["--no-progress", root],
     ] {
         let out = clocx(&args);
         assert!(out.status.success(), "{out:?}");
         assert!(out.stderr.is_empty(), "{args:?}: {out:?}");
+        assert!(!out.stdout.contains(&b'\r'), "{args:?}: {out:?}");
     }
 }
 
