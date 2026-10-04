@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Owner decision 2026-10-03: release tags are clocx-vX.Y.Z from now on (frob.toml [release] tag and the release workflow trigger). The GitHub environments crates-io and pypi are set up by the owner."
+at = "2026-10-04T01:21:22Z"
+actor = "lognd"
+rev = 1
