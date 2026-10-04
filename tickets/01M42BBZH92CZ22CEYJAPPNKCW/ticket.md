@@ -2,7 +2,8 @@
 id = "01M42BBZH92CZ22CEYJAPPNKCW"
 title = "Release commit from frob release cut --push gets no CI run"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M422757XQAA9PJ8601NCEV1X"
