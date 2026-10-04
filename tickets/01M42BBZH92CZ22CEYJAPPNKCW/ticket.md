@@ -2,13 +2,13 @@
 id = "01M42BBZH92CZ22CEYJAPPNKCW"
 title = "Release commit from frob release cut --push gets no CI run"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T02:19:58Z"
-updated = "2026-10-04T02:19:58Z"
+updated = "2026-10-04T02:20:01Z"
 scope = [".github/workflows/ci.yml", "docs/releasing.md"]
 
 [[acceptance]]
