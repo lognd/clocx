@@ -8,12 +8,12 @@ points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:48:26Z"
-updated = "2026-10-04T01:48:30Z"
+updated = "2026-10-04T01:49:36Z"
 scope = [".github/**", "docs/releasing.md", ".gitattributes", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a CHANGELOG with a frob-written '## X.Y.Z - date' section or a hand-written '## [X.Y.Z] - date' section, When the release workflow extracts the notes, Then it gets that section's body without the frob integrity marker"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a release commit and tag pushed together, When the plan job finds no CI run for the commit yet, Then it waits a few minutes for one to appear before failing"
