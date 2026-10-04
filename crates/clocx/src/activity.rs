@@ -582,15 +582,14 @@ mod tests {
     }
 
     /// A `--depth N` clone of `t` in a new temporary directory.
+    ///
+    /// `--no-local` makes a path clone honour `--depth` without a `file://`
+    /// URL, which a canonical Windows path (`\\?\C:\...`) cannot form.
     fn shallow_clone(t: &TestRepo, depth: u32) -> tempfile::TempDir {
         let dest = tempfile::tempdir().unwrap();
-        let url = format!("file://{}", t.path().display());
         let depth = depth.to_string();
-        t.git_at(
-            dest.path(),
-            &["clone", "-q", "--depth", &depth, &url, "."],
-            None,
-        );
+        let into = dest.path().to_str().unwrap();
+        t.git(&["clone", "-q", "--no-local", "--depth", &depth, ".", into]);
         dest
     }
 
