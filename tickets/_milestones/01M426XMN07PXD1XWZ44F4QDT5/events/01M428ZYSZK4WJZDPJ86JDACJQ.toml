@@ -1,0 +1,6 @@
+kind = "adopt"
+version = "0.2.0"
+reason = "tagged by the release how-to (docs/releasing.md)"
+at = "2026-10-04T01:38:27Z"
+actor = "lognd"
+rev = 1
