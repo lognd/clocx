@@ -8,7 +8,7 @@ points = 2
 parent = "01M422757XQAA9PJ8601NCEV1X"
 reporter = "lognd"
 created = "2026-10-04T01:40:03Z"
-updated = "2026-10-04T01:45:37Z"
+updated = "2026-10-04T01:45:38Z"
 scope = ["crates/clocx/**", "docs/clocx.md", "changelog.d/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = 'Given a shallow clone, When the report is rendered as text or JSON, Then it says the clone is shallow (a note under the activity table, and "shallow": true in JSON), and a full clone says nothing and has "shallow": false'
-bound = false
+bound = true
 +++
 
 In a shallow clone (CI checkouts are depth 1 by default) the history walk reaches a boundary commit whose parent object is missing; diffing it fails and the whole Activity section becomes unavailable with a WARN on stderr. Count the history that is present instead: skip boundary commits (their diff cannot be known; diffing against the empty tree would count the whole tree as added) and say in the report that the clone is shallow.
